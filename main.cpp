@@ -20,12 +20,6 @@ void    check_av(char **av)
     }
 }
 
-void    create_env(char **av, t_environment *env)
-{
-    env->port = std::atoi(av[1]);
-    env->pass = av[2];
-}
-
 int create_server_socket(int port)
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -34,7 +28,6 @@ int create_server_socket(int port)
         std::cerr << "Error creating socket." << std::endl;
         exit(1);
     }
-
     struct sockaddr_in server_addr;//Defines a structure that holds the server's address information
     memset(&server_addr, 0, sizeof(server_addr));// Initializes the server_addr structure to zero, ensuring that it doesn't contain any garbage data
     server_addr.sin_family = AF_INET;//Specifies the address family as IPv4.
@@ -54,8 +47,15 @@ int create_server_socket(int port)
         std::cerr << "Error listening on socket." << std::endl;
         exit(1);
     }
-
     return server_socket;
+}
+
+void    create_env(char **av, t_environment *env)
+{
+    env->port = std::atoi(av[1]);
+    env->pass = av[2];
+    env->server_socket = create_server_socket(env->port);
+    env->client_count = 0;
 }
 
 void set_non_blocking(int sockfd)
@@ -74,17 +74,49 @@ void set_non_blocking(int sockfd)
     }
 }
 
-void handle_client(int client_socket)
+void handle_client(int client_socket, t_environment *env)
 {
-    char buffer[512];
+    char buffer[1000];
     memset(buffer, 0, sizeof(buffer));
     
     ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     
     if (bytes_received > 0)
     {
-        std::cout << "Received: " << buffer << std::endl;
-        send(client_socket, buffer, bytes_received, 0);  // Echo back the message
+        if (buffer[bytes_received - 1] == '\n')
+        {
+            buffer[bytes_received - 1] = '\0';
+        }
+        // Check if the user is already authenticated
+        if (env->clients[client_socket].authenticated == false)
+        {
+            // The user needs to enter the password
+            // std::cout<< buffer<< std::endl;
+            // std::cout<< env->pass.c_str() << std::endl;
+            send(client_socket, "Please enter the password:", 26, 0);
+            if (strncmp(buffer, env->pass.c_str(), sizeof(buffer)) == 0)
+            {
+                // Correct password
+                env->clients[client_socket].authenticated = true;
+                send(client_socket, "Password accepted. Welcome to the server!\n", 42, 0);
+                std::cout << "Client authenticated successfully." << std::endl;
+            }
+            else
+            {
+                // Incorrect password, close the connection
+                send(client_socket, "Incorrect password. Connection closing.\n", 41, 0);
+                close(client_socket);
+                std::cout << "Client failed to authenticate. Connection closed." << std::endl;
+                return; // Exit early to stop handling this client
+            }
+        }
+        else
+        {
+            // Now the user is authenticated, you can handle other commands here
+            // For example, handle the nickname setting or channel joining
+            // std::cout << "Received: " << buffer << std::endl;
+            // send(client_socket, buffer, bytes_received, 0);  // Echo back the message
+        }
     }
     else if (bytes_received == 0)
     {
@@ -97,18 +129,18 @@ void handle_client(int client_socket)
     }
 }
 
-void server_loop(int server_socket)
+
+void server_loop(t_environment *env)
 {
     struct pollfd clients[MAX_CLIENTS];
-    int client_count = 0;
 
     // Add server socket to poll
-    clients[0].fd = server_socket;
+    clients[0].fd = env->server_socket;
     clients[0].events = POLLIN;
 
     while (true)
     {
-        int poll_result = poll(clients, client_count + 1, -1);  // Monitor server socket + clients
+        int poll_result = poll(clients, env->client_count + 1, -1);  // Monitor server socket + clients
         if (poll_result == -1)
         {
             std::cerr << "Poll error." << std::endl;
@@ -118,7 +150,7 @@ void server_loop(int server_socket)
         // Check if new client is trying to connect
         if (clients[0].revents & POLLIN)
         {
-            int new_client = accept(server_socket, NULL, NULL);
+            int new_client = accept(env->server_socket, NULL, NULL);
             if (new_client == -1)
             {
                 std::cerr << "Error accepting client." << std::endl;
@@ -128,17 +160,20 @@ void server_loop(int server_socket)
             set_non_blocking(new_client);
 
             // Add new client to poll array
-            clients[++client_count].fd = new_client;
-            clients[client_count].events = POLLIN;
+            clients[++env->client_count].fd = new_client;
+            clients[env->client_count].events = POLLIN;
             std::cout << "New client connected." << std::endl;
+            env->clients[new_client] = Client();
+            env->clients[new_client].authenticated = false;  // Manually set authentication status
+
         }
 
         // Handle communication with existing clients
-        for (int i = 1; i <= client_count; ++i)
+        for (int i = 1; i <= env->client_count; ++i)
         {
             if (clients[i].revents & POLLIN)
             {
-                handle_client(clients[i].fd);
+                handle_client(clients[i].fd, env);  // Pass env as the second argument
             }
         }
     }
@@ -150,11 +185,8 @@ void    lets_do_it(char **av)
 
     check_av(av);
     create_env(av, &env);
-    int server_socket = create_server_socket(env.port);
-    server_loop(server_socket);
-    close(server_socket);
-//     std::cout<< server_socket << std::endl;
-//     std::cout << "Port: " << env.port << "\nPassword: " << env.pass << std::endl;
+    server_loop(&env);
+    close(env.server_socket);
 }
 
 int main(int ac, char **av)

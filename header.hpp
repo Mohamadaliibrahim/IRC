@@ -10,13 +10,23 @@
 #include <cstring>
 #include <fcntl.h>
 #include <poll.h>
+#include <sstream>
+#include <map>
+#include <vector>
 
+struct Client {
+    bool authenticated;
+    // You can add more information per client, like nickname, etc.
+};
 
-typedef struct s_environment
-{
-    int     port;
-    char    *pass;
-} t_environment;
+struct t_environment {
+    int port;
+    std::string pass;
+    int server_socket;
+    int client_count;
+    std::map<int, Client> clients;  // Map to store client authentication status
+};
+
 
 
 #endif
