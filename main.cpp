@@ -93,7 +93,6 @@ void handle_client(int client_socket, t_environment *env)
             // The user needs to enter the password
             // std::cout<< buffer<< std::endl;
             // std::cout<< env->pass.c_str() << std::endl;
-            send(client_socket, "Please enter the password:", 26, 0);
             if (strncmp(buffer, env->pass.c_str(), sizeof(buffer)) == 0)
             {
                 // Correct password
@@ -165,6 +164,7 @@ void server_loop(t_environment *env)
             std::cout << "New client connected." << std::endl;
             env->clients[new_client] = Client();
             env->clients[new_client].authenticated = false;  // Manually set authentication status
+            send(new_client, "Please enter the password:", 26, 0);
 
         }
 
