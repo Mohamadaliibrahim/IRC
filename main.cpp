@@ -98,6 +98,7 @@ void handle_client(int client_socket, t_environment *env)
                 // Correct password
                 env->clients[client_socket].authenticated = true;
                 send(client_socket, "Password accepted. Welcome to the server!\n", 42, 0);
+                send(client_socket, "Please enter your NICK name please: ", 36, 0);
                 std::cout << "Client authenticated successfully." << std::endl;
             }
             else
@@ -109,12 +110,16 @@ void handle_client(int client_socket, t_environment *env)
                 return; // Exit early to stop handling this client
             }
         }
+        else if (env->clients[client_socket].nickname.empty())
+        {
+            env->clients[client_socket].nickname = buffer;
+            send(client_socket, "Nickname accepted. You are now connected.\n", 41, 0);
+            std::cout << "Client's nickname set to: " << buffer << std::endl;
+        }
         else
         {
-            // Now the user is authenticated, you can handle other commands here
-            // For example, handle the nickname setting or channel joining
-            // std::cout << "Received: " << buffer << std::endl;
-            // send(client_socket, buffer, bytes_received, 0);  // Echo back the message
+            std::cout<<"hello world\n";
+            send(client_socket, "Hello world\n", 11, 0);
         }
     }
     else if (bytes_received == 0)
@@ -164,7 +169,7 @@ void server_loop(t_environment *env)
             std::cout << "New client connected." << std::endl;
             env->clients[new_client] = Client();
             env->clients[new_client].authenticated = false;  // Manually set authentication status
-            send(new_client, "Please enter the password:", 26, 0);
+            send(new_client, "Please enter the password: ", 27, 0);
 
         }
 

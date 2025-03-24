@@ -16,6 +16,7 @@
 
 struct Client {
     bool authenticated;
+    std::string nickname;
     // You can add more information per client, like nickname, etc.
 };
 
