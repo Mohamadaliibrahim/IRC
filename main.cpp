@@ -20,6 +20,20 @@ void    check_av(char **av)
     }
 }
 
+void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env)
+{
+    std::map<std::string, Channel>::iterator channel_it = env->channels.find(channel_name);
+    if (channel_it != env->channels.end())
+    {
+        std::vector<int>::iterator client_it = channel_it->second.clients.begin();;
+        while (client_it != channel_it->second.clients.end())
+        {
+            send(*client_it, message.c_str(), message.size(), 0);
+            client_it++;
+        }
+    }
+}
+
 int create_server_socket(int port)
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -71,116 +85,6 @@ void set_non_blocking(int sockfd)
     {
         std::cerr << "Error setting socket to non-blocking." << std::endl;
         exit(1);
-    }
-}
-
-void handle_client(int client_socket, t_environment *env)
-{
-    char buffer[1000];
-    memset(buffer, 0, sizeof(buffer));
-    
-    ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-    
-    if (bytes_received > 0)
-    {
-        if (buffer[bytes_received - 1] == '\n')
-        {
-            buffer[bytes_received - 1] = '\0';
-        }
-        // Check if the user is already authenticated
-        if (env->clients[client_socket].authenticated == false)
-        {
-            // The user needs to enter the password
-            // std::cout<< buffer<< std::endl;
-            // std::cout<< env->pass.c_str() << std::endl;
-            if (strncmp(buffer, env->pass.c_str(), sizeof(buffer)) == 0)
-            {
-                // Correct password
-                env->clients[client_socket].authenticated = true;
-                send(client_socket, "Password accepted. Welcome to the server!\n", 42, 0);
-                send(client_socket, "Please enter your NICK name please: ", 36, 0);
-                std::cout << "Client authenticated successfully." << std::endl;
-            }
-            else
-            {
-                // Incorrect password, close the connection
-                send(client_socket, "Incorrect password. Connection closing.\n", 41, 0);
-                close(client_socket);
-                std::cout << "Client failed to authenticate. Connection closed." << std::endl;
-                return; // Exit early to stop handling this client
-            }
-        }
-        else if (env->clients[client_socket].nickname.empty())
-        {
-            env->clients[client_socket].nickname = buffer;
-            send(client_socket, "Nickname accepted. You are now connected.\n", 41, 0);
-            std::cout << "Client's nickname set to: " << buffer << std::endl;
-        }
-        else
-        {
-            std::cout<<"hello world\n";
-            send(client_socket, "Hello world\n", 11, 0);
-        }
-    }
-    else if (bytes_received == 0)
-    {
-        std::cout << "Client disconnected." << std::endl;
-        close(client_socket);
-    }
-    else
-    {
-        std::cerr << "Error receiving data from client." << std::endl;
-    }
-}
-
-
-void server_loop(t_environment *env)
-{
-    struct pollfd clients[MAX_CLIENTS];
-
-    // Add server socket to poll
-    clients[0].fd = env->server_socket;
-    clients[0].events = POLLIN;
-
-    while (true)
-    {
-        int poll_result = poll(clients, env->client_count + 1, -1);  // Monitor server socket + clients
-        if (poll_result == -1)
-        {
-            std::cerr << "Poll error." << std::endl;
-            exit(1);
-        }
-
-        // Check if new client is trying to connect
-        if (clients[0].revents & POLLIN)
-        {
-            int new_client = accept(env->server_socket, NULL, NULL);
-            if (new_client == -1)
-            {
-                std::cerr << "Error accepting client." << std::endl;
-                continue;
-            }
-
-            set_non_blocking(new_client);
-
-            // Add new client to poll array
-            clients[++env->client_count].fd = new_client;
-            clients[env->client_count].events = POLLIN;
-            std::cout << "New client connected." << std::endl;
-            env->clients[new_client] = Client();
-            env->clients[new_client].authenticated = false;  // Manually set authentication status
-            send(new_client, "Please enter the password: ", 27, 0);
-
-        }
-
-        // Handle communication with existing clients
-        for (int i = 1; i <= env->client_count; ++i)
-        {
-            if (clients[i].revents & POLLIN)
-            {
-                handle_client(clients[i].fd, env);  // Pass env as the second argument
-            }
-        }
     }
 }
 
