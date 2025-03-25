@@ -46,33 +46,55 @@ int ft_pass(const std::string &buffer, t_environment **env, int client_socket)
     }
     else
     {
-        send(client_socket, "Incorrect password. Connection closing.\n", 41, 0);
-        close(client_socket);
-        std::cout << "Client failed to authenticate. Connection closed." << std::endl;
-        return 1;
+        send(client_socket, "Incorrect password.\n", 20, 0);
+        std::cout << "Client failed to authenticate." << std::endl;
     }
     return (0);
 }
 
-void    ft_nick(const std::string &buffer, t_environment **env, int client_socket)
+void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::string msg = get_msg1(buffer);
+
+    for (std::map<int, Client>::iterator it = (*env)->clients.begin(); it != (*env)->clients.end(); ++it)
+    {
+        if (it->second.nickname == msg)
+        {
+            std::string error_msg = "Nickname already taken.\n";
+            send(client_socket, error_msg.c_str(), error_msg.size(), 0);
+            std::cout << "Nickname " << msg << " is already in use." << std::endl;
+            return;
+        }
+    }
+
     (*env)->clients[client_socket].nickname = msg;
     send(client_socket, "Nickname accepted.\n", 19, 0);
     std::cout << "Client's nickname set to: " << msg << std::endl;
     (*env)->clients[client_socket].nick_flag = true;
 }
 
-void    ft_user(const std::string &buffer, t_environment **env, int client_socket)
+
+void ft_user(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::string msg = get_msg1(buffer);
+
+    for (std::map<int, Client>::iterator it = (*env)->clients.begin(); it != (*env)->clients.end(); ++it)
+    {
+        if (it->second.username == msg)
+        {
+            std::string error_msg = "Username already taken.\n";
+            send(client_socket, error_msg.c_str(), error_msg.size(), 0);
+            std::cout << "Username " << msg << " is already in use." << std::endl;
+            return;
+        }
+    }
+
     (*env)->clients[client_socket].username = msg;
-    send(client_socket, "Username accepted. You are now connected.\n", 42, 0);
+    send(client_socket, "Username accepted.\n", 19, 0);
     std::cout << "Client's username set to: " << msg << std::endl;
     (*env)->clients[client_socket].user_flag = true;
-    if ((*env)->clients[client_socket].pass_flag && (*env)->clients[client_socket].nick_flag && (*env)->clients[client_socket].user_flag)
-    (*env)->clients[client_socket].all_set = true;
 }
+
 
 void handle_client(int client_socket, t_environment *env)
 {
@@ -94,12 +116,16 @@ void handle_client(int client_socket, t_environment *env)
             ft_nick(buffer, &env, client_socket);
         else if(strncmp(buffer, "USER ", 5) == 0)
             ft_user(buffer, &env, client_socket);
-        else if ((strncmp(buffer, "JOIN ", 5) == 0) && (env->clients[client_socket].all_set))
+        else if ((env->clients[client_socket].pass_flag) && (env->clients[client_socket].nick_flag) && (env->clients[client_socket].user_flag))
+        {
+            env->clients[client_socket].all_set = true;
+            if ((strncmp(buffer, "JOIN ", 5) == 0) && (env->clients[client_socket].all_set))
             ft_join(client_socket, buffer, env);
-        else if ((strncmp(buffer, "PRIVMSG ", 8) == 0) && (env->clients[client_socket].all_set))
-            ft_private_message(client_socket, buffer, env);
-        else if (!(env->clients[client_socket].all_set))
-            send(client_socket, "You need to register first :D\n", 30, 0);
+            else if ((strncmp(buffer, "PRIVMSG ", 8) == 0) && (env->clients[client_socket].all_set))
+                ft_private_message(client_socket, buffer, env);
+            else if (!(env->clients[client_socket].all_set))
+                send(client_socket, "You need to register first :D\n", 30, 0);
+        }
         else
         {
             std::ostringstream message;
