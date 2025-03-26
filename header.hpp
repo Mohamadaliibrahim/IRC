@@ -12,6 +12,8 @@
 #include <poll.h>
 #include <sstream>
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
 #include <arpa/inet.h>
 
@@ -21,6 +23,7 @@ struct Client
     std::string nickname;
     std::string username;
     std::string buffer;
+    std::string realname;
     bool    pass_flag;
     bool    nick_flag;
     bool    user_flag;
@@ -44,6 +47,7 @@ struct t_environment
     std::map<std::string, Channel> channels;
 };
 
+std::vector<std::string> split(const std::string &str, char delimiter);
 std::string get_msg(const std::string &buffer);
 void handle_client(int client_socket, t_environment *env);
 void    lets_do_it(char **av);
@@ -56,6 +60,7 @@ void    ft_join(int client_socket, const std::string &buffer, t_environment *env
 Channel create_channel(std::string channel_name);
 void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env);
 void    check_av(char **av);
+std::string get_msg1(const std::string &buffer);
 // void first_message(int new_client, t_environment *env, pollfd clients[]);
 
 #endif

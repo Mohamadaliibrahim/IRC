@@ -23,15 +23,18 @@ std::string get_msg(const std::string &buffer)
 
 void ft_private_message(int client_socket, const std::string &buffer, t_environment *env)
 {
-    size_t target_end = buffer.find(" ", 8);
-    std::string target = buffer.substr(8, target_end - 8);
-    std::string msg = get_msg(buffer);
+    // Parse the target (recipient) and message
+    size_t target_end = buffer.find(" ", 8);  // Find the space after "PRIVMSG"
+    std::string target = buffer.substr(8, target_end - 8);  // Extract the target nickname
+    std::string msg = get_msg(buffer);  // Extract the message after the target
 
-    if (target[0] == '#')
+    // If the target is a channel, handle it as a channel message
+    if (target[0] == '#')  // Check if the target is a channel
     {
-        if (env->channels.find(target) != env->channels.end())
+        if (env->channels.find(target) != env->channels.end())  // If the channel exists
         {
             bool sender_in_channel = false;
+            // Check if the sender is in the channel
             std::vector<int>::iterator client_it = env->channels[target].clients.begin();
             while (client_it != env->channels[target].clients.end())
             {
@@ -43,6 +46,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                 client_it++;
             }
 
+            // If the sender is in the channel, broadcast the message
             if (sender_in_channel)
                 broadcast_message(env->clients[client_socket].nickname + " (channel): " + msg + "\n", target, env);
             else
@@ -57,18 +61,21 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
             send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         }
     }
-    else
+    else  // If the target is a user (not a channel)
     {
         bool recipient_found = false;
+        // Iterate through all clients to find the recipient
         for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); ++it)
         {
-            if (it->second.nickname == target)
+            if (it->second.nickname == target)  // If the recipient is found
             {
-                send(it->first, (env->clients[client_socket].nickname + " (private): " + msg + "\n").c_str(), msg.size() + env->clients[client_socket].nickname.size() + 13, 0);
+                std::string private_msg = env->clients[client_socket].nickname + " (private): " + msg + "\n";
+                send(it->first, private_msg.c_str(), private_msg.size(), 0);  // Send the private message
                 recipient_found = true;
                 break;
             }
         }
+        // If the recipient is not found, send an error to the sender
         if (!recipient_found)
         {
             std::string error_msg = "No such user: " + target + "\n";
@@ -76,3 +83,4 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
         }
     }
 }
+
