@@ -1,42 +1,38 @@
 #include "header.hpp"
 
-std::string get_msg(const std::string &buffer)
+std::string trim_that_last_with_flag(const std::string& str, char *x)
 {
-    size_t target_end = buffer.find(" ", 8);
-    size_t colon_pos = buffer.find(" :", target_end);
-    std::string msg;
+    size_t end = str.find_last_not_of(" \t\r\n");
 
-    if (colon_pos != std::string::npos) // If there's a colon, take everything after it
-        msg = buffer.substr(colon_pos + 2);  // Everything after ":"
-    else // If there's no colon, take only the first word as the message
-    {
-        size_t msg_end = buffer.find(" ", target_end + 1);  // Find next space after the target
-        if (msg_end != std::string::npos)
-        {
-            msg = buffer.substr(target_end + 1, msg_end - target_end - 1);  // Extract only the first word (e.g., "hello")
-        }
-        else
-            msg = buffer.substr(target_end + 1);  // If no space, take the rest (handle edge case)
-    }
-    return msg;
+    if (end == std::string::npos)
+        return "";
+    if (end != (str.size() - 1))
+        (*x) = 'a';
+    return str.substr(0, end + 1);
 }
 
 void ft_private_message(int client_socket, const std::string &buffer, t_environment *env)
 {
-    // Parse the target (recipient) and message
-    size_t target_end = buffer.find(" ", 8);  // Find the space after "PRIVMSG"
-    std::string target = buffer.substr(8, target_end - 8);  // Extract the target nickname
-    std::string msg = get_msg(buffer);  // Extract the message after the target
+    char a = '\0';
+    std::string trimmed_buffer = trim_that_last_with_flag(buffer, &a);
+    std::vector<std::string> buff = split_on_space(trimmed_buffer, ' ');
+    std::vector<std::string>::iterator it = buff.begin();
 
-    // If the target is a channel, handle it as a channel message
-    if (target[0] == '#')  // Check if the target is a channel
+    if (buff.size() <= 2)
     {
-        if (env->channels.find(target) != env->channels.end())  // If the channel exists
+        send(client_socket, "Error: PRIVMSG\n", 16, 0);
+        return;
+    }
+    *it = trim_that_first(*it);
+    *it = trim_that_last(*it);
+    if ((*(it + 1))[0] == '#')
+    {
+        if (env->channels.find(*(it + 1)) != env->channels.end())  // If the channel exists
         {
             bool sender_in_channel = false;
-            // Check if the sender is in the channel
-            std::vector<int>::iterator client_it = env->channels[target].clients.begin();
-            while (client_it != env->channels[target].clients.end())
+
+            std::vector<int>::iterator client_it = env->channels[*(it + 1)].clients.begin();
+            while (client_it != env->channels[*(it + 1)].clients.end())
             {
                 if (*client_it == client_socket)
                 {
@@ -45,40 +41,63 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                 }
                 client_it++;
             }
-
-            // If the sender is in the channel, broadcast the message
+            std::string msg;
+            std::vector<std::string>::iterator ix = it + 2;
+            if (((((*ix)[0]) == ':') && ((*ix)[0]) != ' ') && (a == 'a'))
+                ix[0] = (*ix).substr(1);
+            while (ix != buff.end())
+            {
+                msg += *ix + " ";
+                ix++;
+            }
+            if (!msg.empty())
+            {
+                msg.erase(msg.size() - 1);
+            }
             if (sender_in_channel)
-                broadcast_message(env->clients[client_socket].nickname + " (channel): " + msg + "\n", target, env);
+                broadcast_message(env->clients[client_socket].nickname + " (channel): " + msg + "\n", *(it + 1), env);
             else
             {
-                std::string error_msg = "You are not in the channel: " + target + "\n";
+                std::string error_msg = "You are not in the channel: " + *(it + 1) + "\n";
                 send(client_socket, error_msg.c_str(), error_msg.size(), 0);
             }
         }
         else
         {
-            std::string error_msg = "No such channel: " + target + "\n";
+            std::string error_msg = "No such channel: " + *(it + 1) + "\n";
             send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         }
     }
-    else  // If the target is a user (not a channel)
+    else
     {
+        std::string msg;
         bool recipient_found = false;
-        // Iterate through all clients to find the recipient
-        for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); ++it)
+        std::vector<std::string>::iterator ix = it + 2;
+        if (((((*ix)[0]) == ':') && ((*ix)[0]) != ' ') && (a == 'a'))
+            ix[0] = (*ix).substr(1);
+        while (ix != buff.end())
         {
-            if (it->second.nickname == target)  // If the recipient is found
+            msg += *ix + " ";
+            ix++;
+        }
+        if (!msg.empty())
+        {
+            msg.erase(msg.size() - 1);
+        }
+        it++;
+        for (std::map<int, Client>::iterator ip = env->clients.begin(); ip != env->clients.end(); ++ip)
+        {
+            if (ip->second.nickname == (*it))
             {
                 std::string private_msg = env->clients[client_socket].nickname + " (private): " + msg + "\n";
-                send(it->first, private_msg.c_str(), private_msg.size(), 0);  // Send the private message
+                send(ip->first, private_msg.c_str(), private_msg.size(), 0);
                 recipient_found = true;
                 break;
             }
         }
-        // If the recipient is not found, send an error to the sender
         if (!recipient_found)
         {
-            std::string error_msg = "No such user: " + target + "\n";
+            std::string error_msg = "No such user: " + *it + "\n";
             send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         }
     }

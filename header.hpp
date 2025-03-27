@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 #include <arpa/inet.h>
+#include <algorithm>
+
 
 struct Client
 {
@@ -47,7 +49,10 @@ struct t_environment
     std::map<std::string, Channel> channels;
 };
 
-std::vector<std::string> split(const std::string &str, char delimiter);
+std::string trim_that_first(const std::string& str);
+std::string trim_that_last(const std::string& str);
+std::vector<std::string> split_on_backspash_n(const std::string &str);
+std::vector<std::string> split_on_space(const std::string &str, char delimiter);
 std::string get_msg(const std::string &buffer);
 void handle_client(int client_socket, t_environment *env);
 void    lets_do_it(char **av);

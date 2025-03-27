@@ -8,6 +8,20 @@ Channel create_channel(std::string channel_name)
     return (new_one);
 }
 
+std::string trim_that_last(const std::string& str)
+{
+    // Find the last non-space character
+    size_t end = str.find_last_not_of(" \t\r\n");
+
+    // If there's no non-space character, return an empty string
+    if (end == std::string::npos)
+        return "";
+
+    // Return the substring from the beginning to the last non-space character
+    return str.substr(0, end + 1);
+}
+
+
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
     if (buffer.length() < 6)
@@ -16,7 +30,8 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         return;
     }
-    std::string channel_name = buffer.substr(5);
+    std::string trimmed_buffer = trim_that_last(buffer);
+    std::string channel_name = trimmed_buffer.substr(5);
     if (channel_name[0] == '#')
     {
         bool already_in_channel = false;
@@ -45,6 +60,12 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         send(client_socket, join_message.c_str(), join_message.size(), 0);
         if (env->channels[channel_name].clients.size() > 1)
             broadcast_message(env->clients[client_socket].nickname + " has joined the channel: " + channel_name + "\n", channel_name, env);
+        std::cout << "Clients in channel " << channel_name << ":" << std::endl;
+        for (std::vector<int>::iterator it = env->channels[channel_name].clients.begin(); it != env->channels[channel_name].clients.end(); ++it)
+        {
+            int client_sock = *it;
+            std::cout << env->clients[client_sock].nickname << std::endl;  // Print the nickname of each client
+        }
     }
     else
     {
