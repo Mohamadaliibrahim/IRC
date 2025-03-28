@@ -232,6 +232,14 @@ void handle_client(int client_socket, t_environment *env)
             ft_private_message(client_socket, buffer, env);
         else if (!(env->clients[client_socket].all_set))
             send(client_socket, "You need to register first :D\n", 30, 0);
+        else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
+        {
+            topic_func(client_socket,buffer,env);
+        }
+        else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
+        {
+            
+        }
         else
         {
             std::ostringstream message;
