@@ -53,6 +53,7 @@ struct t_environment
     std::map<std::string, Channel> channels;
 };
 
+std::string sanitize_message(const std::string &msg);
 std::string trim_that_first(const std::string& str);
 std::string trim_that_last(const std::string& str);
 std::vector<std::string> split_on_backspash_n(const std::string &str);

@@ -20,7 +20,9 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
 
     if (buff.size() <= 2)
     {
-        send(client_socket, "Error: PRIVMSG\n", 16, 0);
+        std::string error_msg = "Error: PRIVMSG\n";
+        error_msg = sanitize_message(error_msg);
+        send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         return;
     }
     *it = trim_that_first(*it);
@@ -59,12 +61,14 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
             else
             {
                 std::string error_msg = "You are not in the channel: " + *(it + 1) + "\n";
+                error_msg = sanitize_message(error_msg);
                 send(client_socket, error_msg.c_str(), error_msg.size(), 0);
             }
         }
         else
         {
             std::string error_msg = "No such channel: " + *(it + 1) + "\n";
+            error_msg = sanitize_message(error_msg);
             send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         }
     }
@@ -90,6 +94,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
             if (ip->second.nickname == (*it))
             {
                 std::string private_msg = env->clients[client_socket].nickname + " (private): " + msg + "\n";
+                private_msg = sanitize_message(private_msg);
                 send(ip->first, private_msg.c_str(), private_msg.size(), 0);
                 recipient_found = true;
                 break;
@@ -98,6 +103,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
         if (!recipient_found)
         {
             std::string error_msg = "No such user: " + *it + "\n";
+            error_msg = sanitize_message(error_msg);
             send(client_socket, error_msg.c_str(), error_msg.size(), 0);
         }
     }
