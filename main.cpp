@@ -56,7 +56,7 @@ int create_server_socket(int port)
         exit(1);
     }
 
-    if (listen(server_socket, MAX_CLIENTS) == -1) //Prepare the socket to listen for incoming connections
+    if (listen(server_socket, MAX_CLIENTS) == -1)
     {
         std::cerr << "Error listening on socket." << std::endl;
         exit(1);

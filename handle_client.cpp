@@ -149,34 +149,28 @@ std::vector<std::string> split_on_space(const std::string &str, char delimiter)
 
 void trim_start(char* buffer)
 {
-    // Find the first non-space character
     size_t start = 0;
     while (buffer[start] == ' ' || buffer[start] == '\t' || buffer[start] == '\r' || buffer[start] == '\n')
     {
         start++;
     }
 
-    // Shift the buffer content to the left to remove leading spaces
     size_t length = strlen(buffer);
     for (size_t i = 0; i < length - start; ++i)
     {
         buffer[i] = buffer[start + i];
     }
 
-    // Null-terminate the string after shifting
     buffer[length - start] = '\0';
 }
 
 std::string trim_that_first(const std::string& str)
 {
-    // Find the first non-space character
     size_t start = str.find_first_not_of(" \t\r\n");
 
-    // If there's no non-space character, return an empty string
     if (start == std::string::npos)
         return "";
 
-    // Return the substring starting from the first non-space character
     return str.substr(start);
 }
 
