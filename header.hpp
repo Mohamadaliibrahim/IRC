@@ -21,21 +21,25 @@
 
 struct Client
 {
-    bool authenticated;
+    bool        authenticated;
     std::string nickname;
     std::string username;
     std::string buffer;
     std::string realname;
-    bool    pass_flag;
-    bool    nick_flag;
-    bool    user_flag;
-    bool    all_set;
+    bool        pass_flag;
+    bool        nick_flag;
+    bool        user_flag;
+    bool        all_set;
 };
 
 struct Channel
 {
-    std::string name;
-    std::vector<int> clients;
+    int                 superUser; // initial user
+    std::string         name;
+    std::vector<int>    clients; // all users
+    std::vector<int>    normalUsers;
+    std::vector<int>    admins;
+    std::string         topic;
 };
 
 struct t_environment
@@ -67,5 +71,7 @@ void broadcast_message(const std::string &message, const std::string &channel_na
 void    check_av(char **av);
 std::string get_msg1(const std::string &buffer);
 // void first_message(int new_client, t_environment *env, pollfd clients[]);
-
+int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket);
+void	topic_func(int client_sd, std::string cmd, t_environment *env);
+int parse_invite();
 #endif
