@@ -92,6 +92,8 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         if (env->channels.find(channel_name) == env->channels.end())
         {
             env->channels[channel_name] = create_channel(channel_name);
+            env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
+            env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
             std::cout << env->clients[client_socket].nickname << " created new channel: " << channel_name << std::endl;
         }
 
