@@ -1,6 +1,5 @@
 #ifndef HEADER_HPP
 #define HEADER_HPP
-
 #include <iostream>
 #include <cctype>
 #include <cstdlib>
@@ -17,8 +16,14 @@
 #include <vector>
 #include <arpa/inet.h>
 #include <algorithm>
-
-
+struct privmsg
+{
+    std::vector<std::string> channels;
+    std::vector<std::string> users;
+    bool    its_channel;
+    bool    its_user;
+    std::string message;
+};
 struct Client
 {
     bool        authenticated;
@@ -31,7 +36,6 @@ struct Client
     bool        user_flag;
     bool        all_set;
 };
-
 struct Channel
 {
     int                 superUser; // initial user
@@ -41,7 +45,6 @@ struct Channel
     std::vector<int>    admins;
     std::string         topic;
 };
-
 struct t_environment
 {
     int port;
@@ -52,7 +55,7 @@ struct t_environment
     std::map<int, Client> clients;
     std::map<std::string, Channel> channels;
 };
-
+std::vector<std::string> split_on_comma(const std::string &str);
 std::string sanitize_message(const std::string &msg);
 std::string trim_that_first(const std::string& str);
 std::string trim_that_last(const std::string& str);
@@ -72,7 +75,9 @@ void broadcast_message(const std::string &message, const std::string &channel_na
 void    check_av(char **av);
 std::string get_msg1(const std::string &buffer);
 // void first_message(int new_client, t_environment *env, pollfd clients[]);
-int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket);
-void	topic_func(int client_sd, std::string cmd, t_environment *env);
+int parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket);
+void    topic_func(int client_sd, std::string cmd, t_environment *env);
 int parse_invite();
+void invite_func(int client_sd, const std::string &cmd, t_environment *env);
+
 #endif

@@ -5,6 +5,9 @@ Channel create_channel(std::string channel_name)
     Channel new_one;
     new_one.name = channel_name;
     new_one.clients = std::vector<int>();
+    new_one.admins = std::vector<int>();
+    new_one.normalUsers = std::vector<int>();
+    new_one.superUser = -1;
     return (new_one);
 }
 
@@ -40,6 +43,7 @@ std::vector<std::string> split_on_comma(const std::string &str)
 
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
+    int nf = 0;
     std::vector<std::string> channels = split_on_comma(buffer);
     if (channels.empty())
     {
@@ -91,14 +95,30 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         // Create channel if it doesn't exist
         if (env->channels.find(channel_name) == env->channels.end())
         {
+            std::cout << "jnde is here: " << client_socket << "\n";
             env->channels[channel_name] = create_channel(channel_name);
-            env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
-            env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
+            // env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
+            // env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
             std::cout << env->clients[client_socket].nickname << " created new channel: " << channel_name << std::endl;
+            std::cout << "jnde is here2: " << env->channels[channel_name].superUser << "\n";
         }
 
+        
         // Add the client to the channel
-        env->channels[channel_name].clients.push_back(client_socket);
+        if ((int)env->channels[channel_name].clients.size() == 0)
+        {
+            env->channels[channel_name].clients.push_back(client_socket);
+            nf = 1;
+        }
+        else
+        {
+            env->channels[channel_name].clients.push_back(client_socket);
+        }
+        if (nf == 1)
+        {
+            env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
+            env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
+        }
 
         // Send JOIN message (source: server_name, channel: channel_name)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";

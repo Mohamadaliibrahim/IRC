@@ -35,12 +35,14 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 					i++;
 				if (cmd[i] != ':')
 				{
+					std::cout << cmd[i] << "\n";
 					std::string error = "IDIOT, the topic value must start with ':' ?!?!?!?!?!?!?!?\n";
 					error = sanitize_message(error);
 					send(client_socket, error.c_str(), error.size(), 0);
 					return -1;
 				}
-				i++;
+				while (cmd[i] == ':')
+					i++;
 				while (isspace(cmd[i]) && cmd[i] != '\0')
 					i++;
 				j = 0;
@@ -63,6 +65,15 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 	{
 		if (env->channels.find(chan) != env->channels.end())
 		{
+			if (env->channels[chan].superUser == client_sd)
+			{
+				af = 1;
+				message = "Topic changed from " + env->channels[chan].topic + " to " + top + "\n :D\n";
+				env->channels[chan].topic = top;
+				message = sanitize_message(message);
+				send(client_sd, message.c_str(), message.size(), 0);
+				return ;
+			}
 			for (int i = 0; i < (int)env->channels[chan].clients.size(); i++)
 			{
 				if (env->channels[chan].clients[i] == client_sd)
@@ -74,8 +85,10 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 						{
 							af = 1;
 							message = "Topic changed from " + env->channels[chan].topic + " to " + top + "\n :D\n";
+							env->channels[chan].topic = top;
 							message = sanitize_message(message);
 							send(client_sd, message.c_str(), message.size(), 0);
+							return ;
 						}
 					}
 				}
