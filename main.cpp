@@ -36,17 +36,13 @@ std::string sanitize_message(const std::string &msg)
 
 void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env)
 {
-    std::map<std::string, Channel>::iterator channel_it = env->channels.find(channel_name);
-    if (channel_it != env->channels.end())
+    std::map<std::string, Channel>::iterator it = env->channels.find(channel_name);
+    if (it == env->channels.end())
+        return;
+    std::vector<int> &members = it->second.clients;
+    for (std::size_t i = 0; i < members.size(); ++i)
     {
-        std::string sanitized_message = sanitize_message(message);
-
-        std::vector<int>::iterator client_it = channel_it->second.clients.begin();
-        while (client_it != channel_it->second.clients.end())
-        {
-            send(*client_it, sanitized_message.c_str(), sanitized_message.size(), 0);
-            client_it++;
-        }
+        send(members[i], message.c_str(), message.size(), 0);
     }
 }
 
