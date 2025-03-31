@@ -3,7 +3,7 @@ NAME = ircserv
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
-SRC = main.cpp invite.cpp handle_client.cpp join.cpp privmsg.cpp the_loop.cpp topic.cpp
+SRC = main.cpp invite.cpp handle_client.cpp join.cpp privmsg.cpp the_loop.cpp topic.cpp kick.cpp
 OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)

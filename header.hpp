@@ -80,5 +80,6 @@ void    topic_func(int client_sd, std::string cmd, t_environment *env);
 int parse_invite();
 void invite_func(int client_sd, const std::string &cmd, t_environment *env);
 std::string trim_that_last_with_flag(const std::string& str, char *x);
+void kick_func(int client_sd, const std::string &cmd, t_environment *env);
 
 #endif

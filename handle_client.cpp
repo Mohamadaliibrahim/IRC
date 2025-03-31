@@ -241,10 +241,27 @@ void handle_client(int client_socket, t_environment *env)
             ft_join(client_socket, buffer, env);
         else if ((strncmp(buffer, "PRIVMSG ", 8) == 0) && (env->clients[client_socket].all_set))
             ft_private_message(client_socket, buffer, env);
-        // else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
-        // {
-        //     topic_func(client_socket,buffer,env);
-        // }
+        else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
+        {
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
+            topic_func(client_socket,jnde,env);
+        }
+        else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
+        {
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
+            invite_func(client_socket,jnde,env);
+        }
+        else if ((strncmp(buffer, "KICK ", 5) == 0) && (env->clients[client_socket].all_set))
+        {
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
+            kick_func(client_socket,jnde,env);
+        }
         // else if (!(env->clients[client_socket].all_set))
         // {
         //     std::string error = "You need to register first :D\n";
