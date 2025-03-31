@@ -16,14 +16,16 @@
 #include <vector>
 #include <arpa/inet.h>
 #include <algorithm>
-struct privmsg
-{
-    std::vector<std::string> channels;
-    std::vector<std::string> users;
-    bool    its_channel;
-    bool    its_user;
-    std::string message;
-};
+
+// struct privmsg
+// {
+//     std::vector<std::string> channels;
+//     std::vector<std::string> users;
+//     bool    its_channel;
+//     bool    its_user;
+//     std::string message;
+// };
+
 struct Client
 {
     bool        authenticated;

@@ -156,6 +156,20 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         if (env->channels[channel_name].clients.size() > 1)
         {
             broadcast_message(env->clients[client_socket].nickname + " has joined the channel: " + channel_name + "\n", channel_name, env);
+            // -------------- ADDED RFC-STYLE JOIN BROADCAST --------------
+            std::string join_broadcast_msg = 
+                ":" + env->clients[client_socket].nickname +
+                "!" + env->clients[client_socket].username +
+                "@localhost JOIN :" + channel_name + "\r\n";
+
+            // Send this JOIN line to everyone in the channel except the new user
+            for (std::vector<int>::iterator itc = env->channels[channel_name].clients.begin();
+                 itc != env->channels[channel_name].clients.end(); ++itc)
+            {
+                if (*itc != client_socket)
+                    send(*itc, join_broadcast_msg.c_str(), join_broadcast_msg.size(), 0);
+            }
+            // -----------------------------------------------------------
         }
     }
 }

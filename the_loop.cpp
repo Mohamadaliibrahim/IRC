@@ -23,6 +23,7 @@ void    first_message(int new_client, t_environment *env, pollfd clients[])
 void server_loop(t_environment *env)
 {
     struct pollfd clients[MAX_CLIENTS];
+    memset(clients, 0, sizeof(clients));
     clients[0].fd = env->server_socket;
     clients[0].events = POLLIN;
     while (true)
