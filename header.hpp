@@ -80,7 +80,7 @@ void set_non_blocking(int sockfd);
 void    create_env(char **av, t_environment *env);
 int create_server_socket(int port);
 void    ft_join(int client_socket, const std::string &buffer, t_environment *env);
-Channel create_channel(std::string channel_name);
+Channel create_channel(std::string channel_name,int clientsocket);
 void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env);
 void    check_av(char **av);
 std::string get_msg1(const std::string &buffer);

@@ -1,13 +1,19 @@
 #include "header.hpp"
 
-Channel create_channel(std::string channel_name)
+Channel create_channel(std::string channel_name,int clientsocket)
 {
     Channel new_one;
     new_one.name = channel_name;
     new_one.clients = std::vector<int>();
     new_one.admins = std::vector<int>();
     new_one.normalUsers = std::vector<int>();
-    new_one.superUser = -1;
+    new_one.superUser = clientsocket;
+    new_one.topic = "";
+    new_one.IsInviteOnly = -1;
+    new_one.IsThereAPass = -1;
+    new_one.pass = "";
+    new_one.TopicLock = -1;
+    new_one.MembersLimit = -1;
     return (new_one);
 }
 
@@ -96,7 +102,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         if (env->channels.find(channel_name) == env->channels.end())
         {
             std::cout << "jnde is here: " << client_socket << "\n";
-            env->channels[channel_name] = create_channel(channel_name);
+            env->channels[channel_name] = create_channel(channel_name,client_socket);
             // env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             // env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
             std::cout << env->clients[client_socket].nickname << " created new channel: " << channel_name << std::endl;
