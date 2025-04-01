@@ -1,4 +1,5 @@
 #include "header.hpp"
+
 int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket)
 {
     std::string cmd = cmd_line;

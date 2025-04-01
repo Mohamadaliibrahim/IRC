@@ -37,6 +37,7 @@ struct Client
     bool        nick_flag;
     bool        user_flag;
     bool        all_set;
+    std::vector<Channel> InvitedTo;
 };
 struct Channel
 {
@@ -46,6 +47,10 @@ struct Channel
     std::vector<int>    normalUsers;
     std::vector<int>    admins;
     std::string         topic;
+    int IsInviteOnly;
+    int IsThereAPass;
+    std::string pass;
+    int MembersLimit;
 };
 struct t_environment
 {
