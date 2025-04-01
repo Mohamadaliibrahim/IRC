@@ -17,33 +17,27 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
     std::string cmd = cmd_line;
     int i = 0;
 
-    // 1) If command starts with ':', skip that prefix (like parse_kick)
-    if (!cmd.empty() && cmd[0] == ':')
-    {
-        while (i < (int)cmd.size() && cmd[i] != ' ')
-            i++;
-        if (i >= (int)cmd.size())
-            return -1;
-        cmd.erase(0, i + 1);
-        i = 0;
-    }
-
-    // 2) Ensure it's long enough for "MODE "
+    // // 1) If command starts with ':', skip that prefix (like parse_kick)
+    // if (!cmd.empty() && cmd[0] == ':')
+    // {
+    //     while (i < (int)cmd.size() && cmd[i] != ' ')
+    //         i++;
+    //     if (i >= (int)cmd.size())
+    //         return -1;
+    //     cmd.erase(0, i + 1);
+    //     i = 0;
+    // }
     if (cmd.size() < 5)
     {
         send_numeric_reply(client_socket,
                            env->clients[client_socket].nickname,
-                           "461", // ERR_NEEDMOREPARAMS
+                           "461",
                            "MODE",
                            "Not enough parameters");
         return -1;
     }
-
-    // 3) Confirm the first 4 characters are "MODE"
     if (strncmp(cmd.c_str(), "MODE", 4) != 0)
-        return -1; // Not a MODE command
-
-    // 4) Ensure there's a space after "MODE"
+        return -1;
     if (!isspace(cmd[4]))
     {
         send_numeric_reply(client_socket,
@@ -53,14 +47,11 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
                            "Not enough parameters");
         return -1;
     }
-
-    // 5) Skip whitespace after "MODE"
     i = 4;
     while (i < (int)cmd.size() && isspace(cmd[i]))
         i++;
     if (i >= (int)cmd.size())
     {
-        // No channel
         send_numeric_reply(client_socket,
                            env->clients[client_socket].nickname,
                            "461",
@@ -68,8 +59,6 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
                            "Not enough parameters");
         return -1;
     }
-
-    // 6) Parse the channel (must start with '#')
     int start = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
@@ -78,18 +67,15 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
     {
         send_numeric_reply(client_socket,
                            env->clients[client_socket].nickname,
-                           "476", // ERR_BADCHANMASK
+                           "476",
                            channel,
                            "Bad Channel Mask");
         return -1;
     }
-
-    // 7) Skip spaces to get the mode string
     while (i < (int)cmd.size() && isspace(cmd[i]))
         i++;
     if (i >= (int)cmd.size())
     {
-        // No mode string
         send_numeric_reply(client_socket,
                            env->clients[client_socket].nickname,
                            "461",
@@ -97,18 +83,12 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
                            "Not enough parameters");
         return -1;
     }
-
-    // 8) Parse mode string
     start = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
     modes = cmd.substr(start, i - start);
-
-    // 9) Skip spaces to collect mode parameters
     while (i < (int)cmd.size() && isspace(cmd[i]))
         i++;
-
-    // 10) Parse all remaining items as parameters
     while (i < (int)cmd.size())
     {
         while (i < (int)cmd.size() && cmd[i] == ':')
@@ -124,23 +104,17 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
         while (i < (int)cmd.size() && isspace(cmd[i]))
             i++;
     }
-
-    return 0; // success
+    return 0;
 }
 
-// ----------------------------------------
-// mode_func function
-// Applies the MODE changes to the channel
 void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 {
     std::string channel;
     std::string modes;
     std::vector<std::string> modeParams;
-
-    // 1) Parse the command
     int parseResult = parse_mode(cmd, channel, modes, modeParams, client_sd, env);
     if (parseResult == -1)
-        return; // parse_mode already sent numeric errors if needed
+        return;
 
     // 2) Check if channel exists
     if (env->channels.find(channel) == env->channels.end())
@@ -451,3 +425,4 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         }
     }
 }
+
