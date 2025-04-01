@@ -26,19 +26,7 @@
 //     std::string message;
 // };
 
-struct Client
-{
-    bool        authenticated;
-    std::string nickname;
-    std::string username;
-    std::string buffer;
-    std::string realname;
-    bool        pass_flag;
-    bool        nick_flag;
-    bool        user_flag;
-    bool        all_set;
-    std::vector<Channel> InvitedTo;
-};
+
 struct Channel
 {
     int                 superUser; // initial user
@@ -51,6 +39,21 @@ struct Channel
     int IsThereAPass;
     std::string pass;
     int MembersLimit;
+    int TopicLock;
+};
+
+struct Client
+{
+    bool        authenticated;
+    std::string nickname;
+    std::string username;
+    std::string buffer;
+    std::string realname;
+    bool        pass_flag;
+    bool        nick_flag;
+    bool        user_flag;
+    bool        all_set;
+    std::vector<Channel> InvitedTo;
 };
 struct t_environment
 {
@@ -82,9 +85,9 @@ void broadcast_message(const std::string &message, const std::string &channel_na
 void    check_av(char **av);
 std::string get_msg1(const std::string &buffer);
 // void first_message(int new_client, t_environment *env, pollfd clients[]);
-int parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket);
+int parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket, t_environment *env);
 void    topic_func(int client_sd, std::string cmd, t_environment *env);
-int parse_invite();
+int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket, t_environment *env);
 void invite_func(int client_sd, const std::string &cmd, t_environment *env);
 std::string trim_that_last_with_flag(const std::string& str, char *x);
 void kick_func(int client_sd, const std::string &cmd, t_environment *env);

@@ -1,7 +1,11 @@
 #include "header.hpp"
 
-int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket)
+int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket, t_environment *env)
 {
+	std::string serverName = "my.irc.server";
+    std::string nick = env->clients[client_socket].nickname;
+    std::string user = env->clients[client_socket].username; 
+    std::string host = "localhost"; 
 	int i = 0;
 	if (strncmp(cmd.c_str(), "TOPIC ", 6) == 0 && isspace(cmd[5]))
 	{
@@ -10,7 +14,9 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 			i++;
 		if (cmd[i] != '#')
 		{
-			std::string error = "IDIOT, channel name must start with a # ?!?!?!?!?!?!?!?\n";
+			std::ostringstream oss;
+       		oss << ":" << serverName << " 403 " << nick << " :Topic :Channel name must start with a #\r\n";
+			std::string error = oss.str();
             error = sanitize_message(error);
             send(client_socket, error.c_str(), error.size(), 0);
 			return -1;
@@ -24,9 +30,6 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 			if (cmd[i + j] == '\0')
 			{
 				return 1;
-				//if it return 1, that means its a display for the topic
-				//so b hal 7ale sar ma3na l channel name l badna nt2akkad enna
-				//mawjoude then eza yes we disay the topic
 			}
 			if (cmd[i + j] != '\0')
 			{
@@ -35,8 +38,9 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 					i++;
 				if (cmd[i] != ':')
 				{
-					std::cout << cmd[i] << "\n";
-					std::string error = "IDIOT, the topic value must start with ':' ?!?!?!?!?!?!?!?\n";
+					std::ostringstream oss;
+       				oss << ":" << serverName << " 461 " << nick << " :TOPIC :Not enough parameters\r\n";
+					std::string error = oss.str();
 					error = sanitize_message(error);
 					send(client_socket, error.c_str(), error.size(), 0);
 					return -1;
@@ -59,16 +63,23 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 void	topic_func(int client_sd, std::string cmd, t_environment *env)
 {
 	std::string chan, top, message;
+	std::string serverName = "my.irc.server";
+    std::string nick = env->clients[client_sd].nickname;
+    std::string user = env->clients[client_sd].username; 
+    std::string host = "localhost"; 
 	int cf = 0, af = 0;
-	int res = parse_topic(cmd, chan, top, client_sd);
+	int res = parse_topic(cmd, chan, top, client_sd, env);
 	if (res == 2)
 	{
+
 		if (env->channels.find(chan) != env->channels.end())
 		{
 			if (env->channels[chan].superUser == client_sd)
 			{
 				af = 1;
-				message = "Topic changed from " + env->channels[chan].topic + " to " + top + "\n :D\n";
+				std::ostringstream oss;
+				oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
+				message = oss.str();
 				env->channels[chan].topic = top;
 				message = sanitize_message(message);
 				send(client_sd, message.c_str(), message.size(), 0);
@@ -84,8 +95,10 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 						if (env->channels[chan].admins[i] == client_sd)
 						{
 							af = 1;
-							message = "Topic changed from " + env->channels[chan].topic + " to " + top + "\n :D\n";
+							std::ostringstream oss;
+							oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
 							env->channels[chan].topic = top;
+							message = oss.str();
 							message = sanitize_message(message);
 							send(client_sd, message.c_str(), message.size(), 0);
 							return ;
@@ -95,20 +108,26 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 			}
 			if (cf == 0)
 			{
-				std::string error = "nigga you are not in that channel\n";
+				std::ostringstream oss;
+       			oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
+				std::string error = oss.str();
 				error = sanitize_message(error);
 				send(client_sd, error.c_str(), error.size(), 0);
 			}
 			else if (cf == 1 && af == 0)
 			{
-				std::string error = "nigga you are not an admin in that shit\n";
+				std::ostringstream oss;
+       			oss << ":" << serverName << " 482 " << nick << " :You're not a channel operator\r\n";
+				std::string error = oss.str();
 				error = sanitize_message(error);
 				send(client_sd, error.c_str(), error.size(), 0);
 			}
 		}
 		else
 		{
-			std::string error = "THERE IS NO CHANNEL WITH THIS NAME?!?!!?\n";
+			std::ostringstream oss;
+       		oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
+			std::string error = oss.str();
 			error = sanitize_message(error);
 			send(client_sd, error.c_str(), error.size(), 0);
 		}
@@ -122,23 +141,33 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 				if (env->channels[chan].clients[i] == client_sd)
 				{
 					cf = 1;
-					message = "the topic is: " + env->channels[chan].topic + "\n";
+					std::ostringstream oss;
+					if (env->channels[chan].topic.empty())
+						oss << ":" << serverName << " 331 " << nick << " :No topic is set " <<"\r\n";
+					else
+       					oss << ":" << serverName << " 332 " << nick << " :Topic is : " << env->channels[chan].topic << "\r\n";
+					message = oss.str();
 					message = sanitize_message(message);
 					send(client_sd, message.c_str(), message.size(), 0);
 				}
 			}
 			if (cf == 0)
 			{
-				std::string error = "nigga you are not in that channel\n";
+				std::ostringstream oss;
+       			oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
+				std::string error = oss.str();
 				error = sanitize_message(error);
 				send(client_sd, error.c_str(), error.size(), 0);
 			}
 		}
 		else
 		{
-			std::string error = "THERE IS NO CHANNEL WITH THIS NAME?!?!!?\n";
+			std::ostringstream oss;
+       		oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
+			std::string error = oss.str();
 			error = sanitize_message(error);
 			send(client_sd, error.c_str(), error.size(), 0);
 		}
 	}
 }
+

@@ -1,7 +1,11 @@
 #include "header.hpp"
 
-int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket)
+int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket, t_environment *env)
 {
+    std::string serverName = "my.irc.server";
+    std::string nick = env->clients[client_socket].nickname;
+    std::string user = env->clients[client_socket].username; 
+    std::string host = "localhost"; 
     std::string cmd = cmd_line;
     int i = 0;
     //gpt 7atta idk le(ymkn shi 5asso b hex chat to test)
@@ -42,7 +46,9 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
     channel = cmd.substr(s, i - s);
     if (channel.empty() || channel[0] != '#')
     {
-        std::string error = "Error: channel name must start with '#'\n";
+        std::ostringstream oss;
+       	oss << ":" << serverName << " 403 " << nick << " :INVITE :Channel name must start with a #\r\n";
+        std::string error = oss.str();
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), 0);
         return -1;
@@ -51,14 +57,19 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
 }
 void invite_func(int client_sd, const std::string &cmd, t_environment *env)
 {
+    std::string serverName = "my.irc.server";
+    std::string user = env->clients[client_sd].username; 
+    std::string host = "localhost"; 
     std::string nick;
     std::string chan;
-    int parseResult = parse_invite(cmd, nick, chan, client_sd);
+    int parseResult = parse_invite(cmd, nick, chan, client_sd,env);
     if (parseResult == -1)
         return;
     if (env->channels.find(chan) == env->channels.end())
     {
-        std::string error = "ERR: No such channel " + chan + "\n";
+        std::ostringstream oss;
+        oss << ":" << serverName << " 403 " << nick << " :INVITE :No such channel " << chan << "\r\n";
+        std::string error  = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), 0);
         return;
@@ -74,7 +85,9 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (!cf)
     {
-        std::string error = "ERR: You are not on channel " + chan + "\n";
+        std::ostringstream oss;
+        oss << ":" << serverName << " 442 " << nick << " :INVITE :You're not on that channel\r\n";
+        std::string error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), 0);
         return;
@@ -90,7 +103,9 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (t_sd == -1)
     {
-        std::string error = "ERR: No such nickname: " + nick + "\n";
+        std::ostringstream oss;
+        oss << ":" << serverName << " 401 " << nick << " :INVITE :No such nickname\r\n";
+        std::string error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), 0);
         return;
@@ -106,15 +121,17 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (in_chan)
     {
-        std::string error = "ERR_USERONCHANNEL " + nick + " " + chan + "\n";
+        std::ostringstream oss;
+        oss << ":" << serverName << " 443 " << nick << " :INVITE :You're on that channel\r\n";
+        std::string error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), 0);
         return;
     }
     {
-        std::stringstream ss;
-        ss << "341 " << nick << " " << chan << "\n";
-        std::string msg = sanitize_message(ss.str());
+        std::ostringstream oss;
+        oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";
+        std::string msg = sanitize_message(oss.str());
         send(client_sd, msg.c_str(), msg.size(), 0);
     }
     {
