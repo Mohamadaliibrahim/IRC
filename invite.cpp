@@ -139,7 +139,8 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         std::ostringstream oss;
 		if (af == 1)
         {
-            oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";   
+            oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";
+            env->channels[chan].invited.push_back(t_sd);
         }
         else 
         {
@@ -152,6 +153,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     {
         std::ostringstream oss;
         oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n"; 
+        env->channels[chan].invited.push_back(t_sd);
         std::string msg = sanitize_message(oss.str());
         send(client_sd, msg.c_str(), msg.size(), 0);
     }
