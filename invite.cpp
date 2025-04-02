@@ -62,6 +62,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     std::string host = "localhost"; 
     std::string nick;
     std::string chan;
+    int af = 0;
     int parseResult = parse_invite(cmd, nick, chan, client_sd,env);
     if (parseResult == -1)
         return;
@@ -128,13 +129,32 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, error.c_str(), error.size(), 0);
         return;
     }
+    if (cf && env->channels[chan].IsInviteOnly == 1)
     {
+        for (int i = 0; i < (int)env->channels[chan].admins.size();i++)
+		{
+			if (env->channels[chan].admins[i] == client_sd)
+				af = 1;
+		}
         std::ostringstream oss;
-        oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";
+		if (af == 1)
+        {
+            oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";   
+        }
+        else 
+        {
+            oss << ":" << serverName << " 482 " << nick << " :TOPIC is locked, You're not channel operator" << "\r\n";
+        }
         std::string msg = sanitize_message(oss.str());
         send(client_sd, msg.c_str(), msg.size(), 0);
     }
+    else  if (cf && env->channels[chan].IsInviteOnly == 1)
     {
+        std::ostringstream oss;
+        oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n"; 
+        std::string msg = sanitize_message(oss.str());
+        send(client_sd, msg.c_str(), msg.size(), 0);
+    }
         std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
@@ -143,7 +163,6 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
            << " :" << chan << "\n";
         std::string msg = sanitize_message(ss.str());
         send(t_sd, msg.c_str(), msg.size(), 0);
-    }
     // 9) Track the invited user
     //    (Now using 'invitedUsers' vector in Channel; just push_back)
     // env->channels[chan].invitedUsers.push_back(t_sd);

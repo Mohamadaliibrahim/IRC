@@ -144,8 +144,20 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 					std::ostringstream oss;
 					if (env->channels[chan].topic.empty())
 						oss << ":" << serverName << " 331 " << nick << " :No topic is set " <<"\r\n";
-					else
-       					oss << ":" << serverName << " 332 " << nick << " :Topic is : " << env->channels[chan].topic << "\r\n";
+					else if (env->channels[chan].TopicLock == 1)
+					{
+						for (int i = 0; i < (int)env->channels[chan].admins.size();i++)
+						{
+							if (env->channels[chan].admins[i] == client_sd)
+								 af = 1;
+						}
+						if (af == 1)
+							oss << ":" << serverName << " 482 " << nick << " :TOPIC is locked, You're not channel operator" << "\r\n";
+						else 
+							oss << ":" << serverName << " 332 " << nick << " :Topic is : " << env->channels[chan].topic << "\r\n";
+					}
+       				else 
+						oss << ":" << serverName << " 332 " << nick << " :Topic is : " << env->channels[chan].topic << "\r\n";
 					message = oss.str();
 					message = sanitize_message(message);
 					send(client_sd, message.c_str(), message.size(), 0);

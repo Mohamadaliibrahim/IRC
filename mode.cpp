@@ -106,6 +106,29 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
     }
     return 0;
 }
+// i and t don't need any parameters
+// o k abd l need a prarameter
+
+
+// o + <nick> give operator to the nick if exist and in channel
+// o - <nick> take operator privilege from the nick if exist and in channel witht operator privilege
+// k + <key/pass> set the key/pass to the channel if it exist and check before if the user is an operator in the channel
+// k - remove the key/pass of the channel and check before if the user is an operator in the channel
+// l + <number> set the limit of the channel but also check the current number is less or equal to the new limit plus check if the user is an operator in the channel
+// l - remove the limit of the channel but also check if the user is an operator in the channel
+
+
+// i + set the channel on invite only  check if the user is an operator in the channel
+// i - remove the restriction of invite only check if the user is an operator in the channel 
+// t + set the topic to be only visible to operator only check if the user in an operator in the channel
+// t - remove the restriction on the topic check if the user is an operator in the channel
+
+// example of a mode cmd MODE #channel -i
+// example of a mode cmd MODE #channel +o <nick>
+// example of a mode cmd MODE #channel +k <key>
+// example of a mode cmd MODE #channel -k 
+// example of a mode cmd MODE #channel -o <nick>
+
 
 void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 {
@@ -113,6 +136,10 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     std::string modes;
     std::vector<std::string> modeParams;
     int parseResult = parse_mode(cmd, channel, modes, modeParams, client_sd, env);
+    std::cout << "\n\n the modes param are" << std::endl;
+    for (int i = 0; i < (int)modeParams.size(); i++)
+        std::cout << modeParams[i]<< std::endl;
+    std::cout << "the modes param end here" << std::endl;
     if (parseResult == -1)
         return;
 
@@ -277,9 +304,18 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                         break;
                     }
                     int limitVal = atoi(modeParams[paramIndex++].c_str());
-                    ch.MembersLimit = limitVal; // set the new limit
-                    appliedModes.push_back('+');
-                    appliedModes.push_back('l');
+                    if (limitVal < 0 && limitVal != -1)
+                        send_numeric_reply(client_sd,
+                                            env->clients[client_sd].nickname,
+                                            "472",
+                                            "MODE",
+                                            "is unknown mode char");
+                    else 
+                    {
+                        ch.MembersLimit = limitVal; // set the new limit
+                        appliedModes.push_back('+');
+                        appliedModes.push_back('l');
+                    }
                 }
                 else
                 {
@@ -318,7 +354,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 }
                 if (target_sd == -1)
                 {
-                    // 401 ERR_NOSUCHNICK
                     send_numeric_reply(client_sd,
                                        env->clients[client_sd].nickname,
                                        "401",
@@ -326,7 +361,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "No such nick/channel");
                     break;
                 }
-
                 // Check if target user is on the channel
                 bool targetOnChannel = false;
                 for (size_t i = 0; i < ch.clients.size(); i++)

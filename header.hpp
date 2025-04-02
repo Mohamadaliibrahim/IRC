@@ -31,7 +31,7 @@ struct Channel
 {
     int                 superUser; // initial user
     std::string         name;
-    std::vector<int>    clients; // all users
+    std::vector<int>    clients; // all users   
     std::vector<int>    normalUsers;
     std::vector<int>    admins;
     std::string         topic;
@@ -91,5 +91,7 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
 void invite_func(int client_sd, const std::string &cmd, t_environment *env);
 std::string trim_that_last_with_flag(const std::string& str, char *x);
 void kick_func(int client_sd, const std::string &cmd, t_environment *env);
+void mode_func(int client_sd, const std::string &cmd, t_environment *env);
+int parse_mode(const std::string &cmd_line, std::string &channel, std::string &modes, std::vector<std::string> &modeParams, int client_socket, t_environment *env);
 
 #endif
