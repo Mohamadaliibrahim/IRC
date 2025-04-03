@@ -7,6 +7,7 @@ Channel create_channel(std::string channel_name,int clientsocket)
     new_one.clients = std::vector<int>();
     new_one.admins = std::vector<int>();
     new_one.normalUsers = std::vector<int>();
+    new_one.invited = std::vector<int>();
     new_one.superUser = clientsocket;
     new_one.topic = "";
     new_one.IsInviteOnly = -1;
@@ -49,8 +50,12 @@ std::vector<std::string> split_on_comma(const std::string &str)
 
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
-    int nf = 0;
+    int nf = 0, invitedf = 0;
     std::vector<std::string> channels = split_on_comma(buffer);
+    std::string nick = env->clients[client_socket].nickname;
+    std::string user = env->clients[client_socket].username;
+    std::string serverName = "my.irc.server";
+    std::ostringstream oss;
     if (channels.empty())
     {
         std::string error = "Invalid JOIN command format.\n";
@@ -116,15 +121,80 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].clients.push_back(client_socket);
             nf = 1;
         }
-        else
-        {
-            env->channels[channel_name].clients.push_back(client_socket);
-        }
         if (nf == 1)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
         }
+        // if (env->channels[channel_name].IsInviteOnly == 1)
+        // {
+        //     for (int i = 0; i < (int)env->channels[channel_name].invited.size(); i++)
+        //     {
+        //         if (env->channels[channel_name].invited[i] == client_socket)
+        //             invitedf = 1;
+        //     }
+        //     if (invitedf == 1)
+        //     {
+        //         if ((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit && env->channels[channel_name].MembersLimit != -1)
+        //         {
+        //             if (env->channels[channel_name].IsThereAPass == 1)
+        //             {
+        //                 /*if () check the if the password is ==  env->channels[channel_name].pass
+        //                 {
+        //                     env->channels[channel_name].clients.push_back(client_socket);
+        //                     env->channels[channel_name].normalUsers.push_back(client_socket);
+        //                 }
+        //                 else
+        //                 {
+        //                     oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+        //                 }
+        //                 */
+        //             }
+        //             else 
+        //             {
+        //                 oss  << ":" << serverName << " 322 " << nick << " " << channel_name << env->channels[channel_name].clients.size() << ":" << env->channels[channel_name].topic << "\r\n";
+        //                 env->channels[channel_name].clients.push_back(client_socket);
+        //                 env->channels[channel_name].normalUsers.push_back(client_socket);
+        //             }
+        //         }
+        //         else
+        //         {
+        //             oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n"; 
+        //         }
+        //     }
+        //     else
+        //     {
+        //             oss << ":" << serverName << " 473 " << nick  << " " << channel_name << " :Cannot join channel (+i) - invite only\r\n";
+        //     }
+        // }
+        // else //not invite only
+        // {
+        //     if (((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit) && env->channels[channel_name].MembersLimit != -1)
+        //     {
+        //         if (env->channels[channel_name].IsThereAPass == 1)
+        //         {
+        //             /*if () check the if the password is ==  env->channels[channel_name].pass
+        //                 {
+        //                     env->channels[channel_name].clients.push_back(client_socket);
+        //                     env->channels[channel_name].normalUsers.push_back(client_socket);
+        //                 }
+        //                 else
+        //                 {
+        //                     oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+        //                 }
+        //             */
+        //         }
+        //         else
+        //         {
+        //             env->channels[channel_name].clients.push_back(client_socket);
+        //             env->channels[channel_name].normalUsers.push_back(client_socket);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n"; 
+        //     }
+        // }
 
         // Send JOIN message (source: server_name, channel: channel_name)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
