@@ -6,11 +6,13 @@
 /*   By: fdahouk <fdahouk@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/04 15:20:41 by fdahouk           #+#    #+#             */
-/*   Updated: 2025/04/04 15:23:59 by fdahouk          ###   ########.fr       */
+/*   Updated: 2025/04/04 15:43:33 by fdahouk          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "header.hpp"
+
+int g_s;
 
 void signalHandler(int signum)
 {
