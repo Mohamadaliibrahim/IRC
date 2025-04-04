@@ -113,7 +113,7 @@ void    lets_do_it(char **av)
 
 int main(int ac, char **av)
 {
-    signal(SIGINT, signalHandler);
+
     signal(SIGQUIT, SIG_IGN);
     signal(SIGPIPE, SIG_IGN);
     if (ac != 3)

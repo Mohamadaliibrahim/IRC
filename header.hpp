@@ -96,8 +96,4 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env);
 void mode_func(int client_sd, const std::string &cmd, t_environment *env);
 int parse_mode(const std::string &cmd_line, std::string &channel, std::string &modes, std::vector<std::string> &modeParams, int client_socket, t_environment *env);
 
-
-// signal
-void signalHandler(int signum);
-
 #endif
