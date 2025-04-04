@@ -42,7 +42,7 @@ void broadcast_message(const std::string &message, const std::string &channel_na
     std::vector<int> &members = it->second.clients;
     for (std::size_t i = 0; i < members.size(); ++i)
     {
-        send(members[i], message.c_str(), message.size(), 0);
+        send(members[i], message.c_str(), message.size(), MSG_NOSIGNAL);
     }
 }
 
@@ -113,6 +113,9 @@ void    lets_do_it(char **av)
 
 int main(int ac, char **av)
 {
+    signal(SIGINT, signalHandler);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
     if (ac != 3)
     {
         std::cerr << "Usage: " << av[0] << " <port> <password>" << std::endl;

@@ -9,7 +9,7 @@ static void send_numeric_reply(int client_sd, const std::string &yourNick, const
     ss << " :" << text << "\n";
 
     std::string msg = sanitize_message(ss.str());
-    send(client_sd, msg.c_str(), msg.size(), 0);
+    send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
 }
 
 int parse_mode(const std::string &cmd_line, std::string &channel, std::string &modes, std::vector<std::string> &modeParams, int client_socket, t_environment *env)
@@ -455,7 +455,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         // Send to everyone in the channel
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
-            send(ch.clients[i], modeMsg.c_str(), modeMsg.size(), 0);
+            send(ch.clients[i], modeMsg.c_str(), modeMsg.size(), MSG_NOSIGNAL);
         }
     }
 }

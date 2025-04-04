@@ -18,7 +18,7 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
        		oss << ":" << serverName << " 403 " << nick << " :Topic :Channel name must start with a #\r\n";
 			std::string error = oss.str();
             error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), 0);
+            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
 			return -1;
 		}
 		else
@@ -42,7 +42,7 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
        				oss << ":" << serverName << " 461 " << nick << " :TOPIC :Not enough parameters\r\n";
 					std::string error = oss.str();
 					error = sanitize_message(error);
-					send(client_socket, error.c_str(), error.size(), 0);
+					send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
 					return -1;
 				}
 				while (cmd[i] == ':')
@@ -82,7 +82,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 				message = oss.str();
 				env->channels[chan].topic = top;
 				message = sanitize_message(message);
-				send(client_sd, message.c_str(), message.size(), 0);
+				send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
 				return ;
 			}
 			for (int i = 0; i < (int)env->channels[chan].clients.size(); i++)
@@ -100,7 +100,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 							env->channels[chan].topic = top;
 							message = oss.str();
 							message = sanitize_message(message);
-							send(client_sd, message.c_str(), message.size(), 0);
+							send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
 							return ;
 						}
 					}
@@ -112,7 +112,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
        			oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
 				std::string error = oss.str();
 				error = sanitize_message(error);
-				send(client_sd, error.c_str(), error.size(), 0);
+				send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 			}
 			else if (cf == 1 && af == 0)
 			{
@@ -120,7 +120,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
        			oss << ":" << serverName << " 482 " << nick << " :You're not a channel operator\r\n";
 				std::string error = oss.str();
 				error = sanitize_message(error);
-				send(client_sd, error.c_str(), error.size(), 0);
+				send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 			}
 		}
 		else
@@ -129,7 +129,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
        		oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
 			std::string error = oss.str();
 			error = sanitize_message(error);
-			send(client_sd, error.c_str(), error.size(), 0);
+			send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 		}
 	}
 	else if (res == 1)
@@ -160,7 +160,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 						oss << ":" << serverName << " 332 " << nick << " :Topic is : " << env->channels[chan].topic << "\r\n";
 					message = oss.str();
 					message = sanitize_message(message);
-					send(client_sd, message.c_str(), message.size(), 0);
+					send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
 				}
 			}
 			if (cf == 0)
@@ -169,7 +169,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
        			oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
 				std::string error = oss.str();
 				error = sanitize_message(error);
-				send(client_sd, error.c_str(), error.size(), 0);
+				send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 			}
 		}
 		else
@@ -178,7 +178,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
        		oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
 			std::string error = oss.str();
 			error = sanitize_message(error);
-			send(client_sd, error.c_str(), error.size(), 0);
+			send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 		}
 	}
 }

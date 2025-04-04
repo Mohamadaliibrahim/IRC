@@ -17,14 +17,14 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
     {
         std::string error = "Invalid PASS command format.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].pass_flag)
     {
         std::string error = "PASS already set!\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if (a.size() > 1 && a[1] == (*env)->pass)
@@ -32,7 +32,7 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
         (*env)->clients[client_socket].authenticated = true;
         std::string error = "Password accepted.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         std::cout << "Client authenticated successfully." << std::endl;
         (*env)->clients[client_socket].pass_flag = true;
     }
@@ -40,7 +40,7 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
     {
         std::string error = "Incorrect password.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         std::cout << "Client failed to authenticate." << std::endl;
     }
 }
@@ -51,14 +51,14 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
     {
         std::string error = "Invalid NICK command format.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].nick_flag)
     {
         std::string error = "NICK already set!\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     for (std::map<int, Client>::iterator ip = (*env)->clients.begin(); ip != (*env)->clients.end(); ++ip)
@@ -67,7 +67,7 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
         {
             std::string error_msg = "Nickname already taken.\n";
             error_msg = sanitize_message(error_msg);
-            send(client_socket, error_msg.c_str(), error_msg.size(), 0);
+            send(client_socket, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
             std::cout << "Nickname " << a[1] << " is already in use." << std::endl;
             return;
         }
@@ -76,13 +76,13 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
     {
         std::string error = "NICK name should not start with #\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     (*env)->clients[client_socket].nickname = a[1];
     std::string error = "Nickname accepted.\n";
     error = sanitize_message(error);
-    send(client_socket, error.c_str(), error.size(), 0);
+    send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
     std::cout << "Client's nickname set to: " << a[1] << std::endl;
     (*env)->clients[client_socket].nick_flag = true;
 }
@@ -93,14 +93,14 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
     {
         std::string error = "Invalid USER command format.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].user_flag)
     {
         std::string error = "USER already set!\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     for (std::map<int, Client>::iterator ip = (*env)->clients.begin(); ip != (*env)->clients.end(); ++ip)
@@ -109,7 +109,7 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
         {
             std::string error_msg = "Username already taken.\n";
             error_msg = sanitize_message(error_msg);
-            send(client_socket, error_msg.c_str(), error_msg.size(), 0);
+            send(client_socket, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
             std::cout << "Username " << a[1] << " is already in use." << std::endl;
             return;
         }
@@ -122,14 +122,14 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
             (*env)->clients[client_socket].realname = a[4].substr(1);
             std::string error =  "Username accepted.\nRealname accepted\n";
             error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), 0);
+            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         }
         else
         {
             (*env)->clients[client_socket].realname = "NONE";
             std::string error = "Username accepted.\nRealname not accepted\n";
             error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), 0);
+            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         }
     }
     else
@@ -137,7 +137,7 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
         (*env)->clients[client_socket].realname = "NONE";
         std::string error = "Username accepted.\nRealname not provided\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
     }
     std::cout << "Client's username set to: " << (*env)->clients[client_socket].username
               << "\nRealname set to: " << (*env)->clients[client_socket].realname << std::endl;

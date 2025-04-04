@@ -60,7 +60,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
     {
         std::string error = "Invalid JOIN command format.\n";
         error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), 0);
+        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     for (std::vector<std::string>::iterator it = channels.begin(); it != channels.end(); ++it)
@@ -79,7 +79,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         {
             std::string error = "Invalid channel name.\n";
             error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), 0);
+            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
             continue;
         }
 
@@ -99,7 +99,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         {
             std::string already_in_channel_msg = "You are already in " + channel_name + " channel.\n";
             already_in_channel_msg = sanitize_message(already_in_channel_msg);
-            send(client_socket, already_in_channel_msg.c_str(), already_in_channel_msg.size(), 0);
+            send(client_socket, already_in_channel_msg.c_str(), already_in_channel_msg.size(), MSG_NOSIGNAL);
             continue;
         }
 
@@ -237,18 +237,18 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         // Send JOIN message (source: server_name, channel: channel_name)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
         join_msg = sanitize_message(join_msg);
-        send(client_socket, join_msg.c_str(), join_msg.size(), 0);
+        send(client_socket, join_msg.c_str(), join_msg.size(), MSG_NOSIGNAL);
 
         // Send topic information (RPL_TOPIC and RPL_TOPICWHOTIME)
         if (!env->channels[channel_name].topic.empty())
         {
             std::string topic_msg = ":server_name 332 " + env->clients[client_socket].nickname + " " + channel_name + " :" + env->channels[channel_name].topic + "\n";
             topic_msg = sanitize_message(topic_msg);
-            send(client_socket, topic_msg.c_str(), topic_msg.size(), 0);
+            send(client_socket, topic_msg.c_str(), topic_msg.size(), MSG_NOSIGNAL);
 
             std::string topic_time_msg = ":server_name 333 " + env->clients[client_socket].nickname + " " + channel_name + " " + env->clients[client_socket].nickname + " " + "1617414567" + "\n";
             topic_time_msg = sanitize_message(topic_time_msg);
-            send(client_socket, topic_time_msg.c_str(), topic_time_msg.size(), 0);
+            send(client_socket, topic_time_msg.c_str(), topic_time_msg.size(), MSG_NOSIGNAL);
         }
 
         // Send the list of users in the channel (RPL_NAMREPLY and RPL_ENDOFNAMES)
@@ -259,12 +259,12 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         }
         user_list_msg += "\n";
         user_list_msg = sanitize_message(user_list_msg);
-        send(client_socket, user_list_msg.c_str(), user_list_msg.size(), 0);
+        send(client_socket, user_list_msg.c_str(), user_list_msg.size(), MSG_NOSIGNAL);
 
         // Send end of names list message
         std::string end_of_names_msg = ":server_name 366 " + env->clients[client_socket].nickname + " " + channel_name + " :End of /NAMES list.\n";
         end_of_names_msg = sanitize_message(end_of_names_msg);
-        send(client_socket, end_of_names_msg.c_str(), end_of_names_msg.size(), 0);
+        send(client_socket, end_of_names_msg.c_str(), end_of_names_msg.size(), MSG_NOSIGNAL);
 
         // Broadcast the new client joining the channel to others in the channel
         if (env->channels[channel_name].clients.size() > 1)
@@ -281,7 +281,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                  itc != env->channels[channel_name].clients.end(); ++itc)
             {
                 if (*itc != client_socket)
-                    send(*itc, join_broadcast_msg.c_str(), join_broadcast_msg.size(), 0);
+                    send(*itc, join_broadcast_msg.c_str(), join_broadcast_msg.size(), MSG_NOSIGNAL);
             }
             // -----------------------------------------------------------
         }

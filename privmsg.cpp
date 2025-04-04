@@ -59,7 +59,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
         oss << ":" << serverName << " 461 " << nick << " PRIVMSG :Not enough parameters\r\n";
         std::string err = oss.str();
         err = sanitize_message(err);
-        send(client_socket, err.c_str(), err.size(), 0);
+        send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
         return;
     }
 
@@ -69,7 +69,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
         oss << ":" << serverName << " 421 " << nick << " " 
             << tokens[0] << " :Unknown command\r\n";
         std::string err = oss.str();
-        send(client_socket, err.c_str(), err.size(), 0);
+        send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
         return;
     }
 
@@ -92,7 +92,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
             << " :No recipient given (PRIVMSG)\r\n";
         std::string err = oss.str();
         err = sanitize_message(err);
-        send(client_socket, err.c_str(), err.size(), 0);
+        send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
         return;
     }
 
@@ -117,7 +117,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                     << " " << target << " :No such channel\r\n";
                 std::string err = oss.str();
                 err = sanitize_message(err);
-                send(client_socket, err.c_str(), err.size(), 0);
+                send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
                 continue;
             }
             if (!is_client_in_channel(client_socket, chIt->second))
@@ -127,7 +127,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                     << " " << target << " :You're not on that channel\r\n";
                 std::string err = oss.str();
                 err = sanitize_message(err);
-                send(client_socket, err.c_str(), err.size(), 0);
+                send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
                 continue;
             }
             std::ostringstream msg;
@@ -151,7 +151,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                         << " PRIVMSG " << target << " :" << message << "\r\n";
                     std::string finalMsg = sanitize_message(msg.str());
 
-                    send(cit->first, finalMsg.c_str(), finalMsg.size(), 0);
+                    send(cit->first, finalMsg.c_str(), finalMsg.size(), MSG_NOSIGNAL);
                     foundUser = true;
                     atLeastOneSuccess = true;
                     break;
@@ -163,7 +163,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                 oss << ":" << serverName << " 401 " << nick
                     << " " << target << " :No such nick/channel\r\n";
                 std::string err = oss.str();
-                send(client_socket, err.c_str(), err.size(), 0);
+                send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
             }
         }
     }
@@ -173,6 +173,6 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
         oss << ":" << serverName << " 442 " << nick << " * "<< ":Error to send!\r\n";
         std::string err = oss.str();
         err = sanitize_message(err);
-        send(client_socket, err.c_str(), err.size(), 0);
+        send(client_socket, err.c_str(), err.size(), MSG_NOSIGNAL);
     }
 }
