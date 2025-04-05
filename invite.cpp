@@ -123,7 +123,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     if (in_chan)
     {
         std::ostringstream oss;
-        oss << ":" << serverName << " 443 " << nick << " :INVITE :You're on that channel\r\n";
+        oss << ":" << serverName << " 443 " << nick << " :INVITE :Is already  on that channel\r\n";
         std::string error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
@@ -144,12 +144,12 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         }
         else 
         {
-            oss << ":" << serverName << " 482 " << nick << " :TOPIC is locked, You're not channel operator" << "\r\n";
+            oss << ":" << serverName << " 482 " << nick << " :INVITE :Invite Failed, You're not channel operator" << "\r\n";
         }
         std::string msg = sanitize_message(oss.str());
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
     }
-    else  if (cf && env->channels[chan].IsInviteOnly == 1)
+    else  if (cf && env->channels[chan].IsInviteOnly == -1)
     {
         std::ostringstream oss;
         oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n"; 
