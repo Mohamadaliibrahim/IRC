@@ -2,6 +2,20 @@
 
 #define MAX_CLIENTS 100
 
+void check_spaces_in_pass(char **av)
+{
+    char *pass = av[2];
+    for (int i = 0; pass[i] != '\0'; ++i)
+    {
+        if (pass[i] == ' ' || pass[i] == '\t')
+        {
+            std::cout << "Space found in pass!" << std::endl;
+            exit (1);
+        }
+    }
+}
+
+
 void    check_av(char **av)
 {
     for (int i = 0; av[1][i] != '\0'; ++i)
@@ -18,6 +32,7 @@ void    check_av(char **av)
         std::cerr << "Invalid port!" << std::endl;
         exit(1);
     }
+    check_spaces_in_pass(av);
 }
 
 std::string sanitize_message(const std::string &msg)
