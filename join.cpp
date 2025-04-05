@@ -156,26 +156,26 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
         }
-        else if  (env->channels[channel_name].IsInviteOnly == 1)
+        else if  (env->channels[channel_name].IsInviteOnly == 1) // is invited only
         {
             for (int i = 0; i < (int)env->channels[channel_name].invited.size(); i++)
             {
                 if (env->channels[channel_name].invited[i] == client_socket)
                     invitedf = 1;
             }
-            if (invitedf == 1)
+            if (invitedf == 1) // invited 
             {
-                if ((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit && env->channels[channel_name].MembersLimit != -1)
+                if (env->channels[channel_name].MembersLimit == -1) // no limit
                 {
-                    if (env->channels[channel_name].IsThereAPass == 1)
+                    if (env->channels[channel_name].IsThereAPass == 1) // pass 
                     {
-                        /*if () check the if the password is ==  env->channels[channel_name].pass
+                        /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
                             env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                         }
-                        else
+                        else // incorrect pass
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
                             message = oss.str();
@@ -185,22 +185,53 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         }
                         */
                     }
-                    else 
+                    else // not pass
                     {
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
-                        env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());                    }
+                        env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                    }
                 }
-                else
+                else  // with limit
                 {
-                    oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
-                    message = oss.str();
-                    message = sanitize_message(message);
-                    send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
-                    return ;
+                    if ((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit) // free space to join
+                    {   
+                        if (env->channels[channel_name].IsThereAPass == 1) // pass 
+                        {
+                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                            {
+                                env->channels[channel_name].clients.push_back(client_socket);
+                                env->channels[channel_name].normalUsers.push_back(client_socket);
+                                env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                            }
+                            else // incorrect pass
+                            {
+                                oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+                                message = oss.str();
+                                message = sanitize_message(message);
+                                send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                                return ;
+                            }
+                            */
+                        }
+                        else // no pass
+                        {
+                            env->channels[channel_name].clients.push_back(client_socket);
+                            env->channels[channel_name].normalUsers.push_back(client_socket);
+                            env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                        }
+                    }
+                    else // limit reached
+                    {
+                        oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
+                        message = oss.str();
+                        message = sanitize_message(message);
+                        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                        return ;
+                    }
                 }
             }
-            else
+            else // not invited
             {
                 oss << ":" << serverName << " 473 " << nick  << " " << channel_name << " :Cannot join channel (+i) - invite only\r\n";
                 message = oss.str();
@@ -216,18 +247,19 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 if (env->channels[channel_name].invited[i] == client_socket)
                     invitedf = 1;
             }
-            if (invitedf == 1)
+            if (invitedf == 1) // invited 
             {
-                if (env->channels[channel_name].MembersLimit == -1)
+                if (env->channels[channel_name].MembersLimit == -1) // no limits
                 {
-                    if(env->channels[channel_name].IsThereAPass == 1)
+                    if(env->channels[channel_name].IsThereAPass == 1) // with pass
                     {
-                        /*if () check the if the password is ==  env->channels[channel_name].pass
+                        /*if () check the if the password is ==  env->channels[channel_name].pass // if correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
+                             env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                         }
-                        else
+                        else // incorrect  pass
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
                             message = oss.str();
@@ -237,24 +269,26 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         }
                         */
                     }
-                    else
+                    else // not pass
                     {
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
+                        env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                     }
                 }
-                else
+                else // limits
                 {
-                    if (((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit))
+                    if (((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit)) // free spaces to join
                     {
-                        if(env->channels[channel_name].IsThereAPass == 1)
+                        if(env->channels[channel_name].IsThereAPass == 1) // pass required
                         {
-                            /*if () check the if the password is ==  env->channels[channel_name].pass
+                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
+                                 env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                             }
-                            else
+                            else // incorrect pass
                             {
                                 oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
                                 message = oss.str();
@@ -264,22 +298,59 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             }
                             */
                         }
-                    else
+                    else // limit reach
                     {
-                        env->channels[channel_name].clients.push_back(client_socket);
-                        env->channels[channel_name].normalUsers.push_back(client_socket);
+                        oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
+                        message = oss.str();
+                        message = sanitize_message(message);
+                        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                        return ;
                     }
                     }
                 }
             }
-            else
+            else // not in the invited vector 
+            {
+                if (env->channels[channel_name].MembersLimit == -1)// no limit
                 {
-                   /*if () check the if the password is ==  env->channels[channel_name].pass
+                    if(env->channels[channel_name].IsThereAPass == 1) //check key
+                    {
+                        /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                        {
+                            env->channels[channel_name].clients.push_back(client_socket);
+                            env->channels[channel_name].normalUsers.push_back(client_socket);
+                             env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                        }
+                        else // incorrect pass
+                        {
+                            oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+                            message = oss.str();
+                            message = sanitize_message(message);
+                            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                            return ;
+                        }
+                        */
+                    }
+                    else // no key
+                    {
+                        env->channels[channel_name].clients.push_back(client_socket);
+                        env->channels[channel_name].normalUsers.push_back(client_socket);
+                        env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                    }
+                }
+                else // limit
+                {
+                    if (((int)env->channels[channel_name].clients.size() < env->channels[channel_name].MembersLimit)) // free space to join
+                    {
+                        if(env->channels[channel_name].IsThereAPass == 1) // pass required
+                        {
+                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
+                                 env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                             }
-                            else
+                            else // incorrect pass
                             {
                                 oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
                                 message = oss.str();
@@ -287,11 +358,19 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                                 send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                                 return ;
                             }
-                    */
-                   //else 
-                    env->channels[channel_name].clients.push_back(client_socket);
-                    env->channels[channel_name].normalUsers.push_back(client_socket);
+                            */
+                        }
+                    else // limit reached
+                    {
+                        oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
+                        message = oss.str();
+                        message = sanitize_message(message);
+                        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                        return ;
+                    }
+                    }
                 }
+            }
         }
         // Send JOIN message (source: server_name, channel: channel_name)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
