@@ -10,7 +10,8 @@ Channel create_channel(std::string channel_name,int clientsocket)
     new_one.invited = std::vector<int>();
     new_one.superUser = clientsocket;
     new_one.topic = "";
-    new_one.IsInviteOnly = -1;
+    new_one.IsInviteOnly = 0;
+    std::cout << "fou2ad smiley gay" << std::endl;
     new_one.IsThereAPass = -1;
     new_one.pass = "";
     new_one.TopicLock = -1;
@@ -56,6 +57,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
     std::string user = env->clients[client_socket].username;
     std::string serverName = "my.irc.server";
     std::ostringstream oss;
+    std::string message;
     if (channels.empty())
     {
         std::string error = "Invalid JOIN command format.\n";
@@ -132,6 +134,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 
         if (cf == 0)
         {
+            std::cout << channel_name << "jnde channel" << std::endl;
             env->channels[channel_name] = create_channel(channel_name,client_socket);
         }
 
@@ -147,6 +150,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].clients.push_back(client_socket);
             nf = 1;
         }
+        std::cout << (int)env->channels[channel_name].IsInviteOnly << std::endl;
         if (nf == 1)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
@@ -173,24 +177,35 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         else
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+                            message = oss.str();
+                            message = sanitize_message(message);
+                            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                            return ;
                         }
                         */
                     }
                     else 
                     {
-                        oss  << ":" << serverName << " 322 " << nick << " " << channel_name << env->channels[channel_name].clients.size() << ":" << env->channels[channel_name].topic << "\r\n";
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
                     }
                 }
                 else
                 {
-                    oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n"; 
+                    oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
+                    message = oss.str();
+                    message = sanitize_message(message);
+                    send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                    return ;
                 }
             }
             else
             {
-                    oss << ":" << serverName << " 473 " << nick  << " " << channel_name << " :Cannot join channel (+i) - invite only\r\n";
+                oss << ":" << serverName << " 473 " << nick  << " " << channel_name << " :Cannot join channel (+i) - invite only\r\n";
+                message = oss.str();
+                message = sanitize_message(message);
+                send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                return ;
             }
         }
         else //not invite only
@@ -207,6 +222,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         else
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+                            message = oss.str();
+                            message = sanitize_message(message);
+                            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                            return ;
                         }
                     */
                 }
@@ -226,6 +245,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         else
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
+                            message = oss.str();
+                            message = sanitize_message(message);
+                            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+                            return ;
                         }
                 */
                //else 

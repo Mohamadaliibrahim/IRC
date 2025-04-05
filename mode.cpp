@@ -158,9 +158,9 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 
     // 3) Check if user is in channel
     bool isInChannel = false;
-    for (size_t i = 0; i < ch.clients.size(); i++)
+    for (size_t i = 0; i < env->channels[channel].clients.size(); i++)
     {
-        if (ch.clients[i] == client_sd)
+        if (env->channels[channel].clients[i] == client_sd)
         {
             isInChannel = true;
             break;
@@ -179,13 +179,13 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 
     // 4) Check if user is superUser or admin (operator privileges)
     bool isOperator = false;
-    if (ch.superUser == client_sd)
+    if (env->channels[channel].superUser == client_sd)
         isOperator = true;
     else
     {
-        for (size_t i = 0; i < ch.admins.size(); i++)
+        for (size_t i = 0; i < env->channels[channel].admins.size(); i++)
         {
-            if (ch.admins[i] == client_sd)
+            if (env->channels[channel].admins[i] == client_sd)
             {
                 isOperator = true;
                 break;
@@ -233,15 +233,19 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
             continue;
         }
 
+        std::cout << sign << c << "\n";
+
         switch (c)
         {
             // +i / -i => invite-only channel
             case 'i':
             {
                 if (sign == '+')
-                    ch.IsInviteOnly = 1;   // 1 means "on"
+                    env->channels[channel].IsInviteOnly = 1;   // 1 means "on"
                 else
-                    ch.IsInviteOnly = -1;  // -1 means "off"
+                {
+                    env->channels[channel].IsInviteOnly = -1;
+                }
                 appliedModes.push_back(sign);
                 appliedModes.push_back('i');
                 break;
@@ -251,9 +255,11 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
             case 't':
             {
                 if (sign == '+')
-                    ch.TopicLock = 1;
+                    env->channels[channel].TopicLock = 1;
                 else
-                    ch.TopicLock = -1;
+                {
+                    env->channels[channel].TopicLock = -1;
+                }
                 appliedModes.push_back(sign);
                 appliedModes.push_back('t');
                 break;
@@ -273,16 +279,16 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                            "Not enough parameters for +k");
                         break;
                     }
-                    ch.IsThereAPass = 1;
-                    ch.pass = modeParams[paramIndex++];
+                    env->channels[channel].IsThereAPass = 1;
+                    env->channels[channel].pass = modeParams[paramIndex++];
                     appliedModes.push_back('+');
                     appliedModes.push_back('k');
                 }
                 else
                 {
                     // Remove the password
-                    ch.IsThereAPass = -1;
-                    ch.pass.clear();
+                    env->channels[channel].IsThereAPass = -1;
+                    env->channels[channel].pass.clear();
                     appliedModes.push_back('-');
                     appliedModes.push_back('k');
                 }
@@ -312,7 +318,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                             "is unknown mode char");
                     else 
                     {
-                        ch.MembersLimit = limitVal; // set the new limit
+                        env->channels[channel].MembersLimit = limitVal; // set the new limit
                         appliedModes.push_back('+');
                         appliedModes.push_back('l');
                     }
@@ -320,7 +326,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 else
                 {
                     // -l => unlimited
-                    ch.MembersLimit = -1; 
+                    env->channels[channel].MembersLimit = -1; 
                     appliedModes.push_back('-');
                     appliedModes.push_back('l');
                 }

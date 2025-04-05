@@ -60,6 +60,7 @@
     "xmemory": "cpp",
     "xstddef": "cpp",
     "xtree": "cpp",
-    "xutility": "cpp"
+    "xutility": "cpp",
+    "csignal": "cpp"
   }
 }
