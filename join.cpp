@@ -185,7 +185,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         }
                         */
                     }
-                    else // not pass
+                    else // not pass and no limit
                     {
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -214,7 +214,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             }
                             */
                         }
-                        else // no pass
+                        else // no pass and available space
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -223,6 +223,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     }
                     else // limit reached
                     {
+                        std::cout << "limits has been reached  in the invite only and invited " << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
@@ -240,9 +241,9 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 return ;
             }
         }
-        else //not invite only
+        else // is not invite only
         {
-            for (int i = 0; i < (int)env->channels[channel_name].invited.size(); i++)
+            for (int i = 0; i < (int)env->channels[channel_name].invited.size(); i++) //  check if invited 
             {
                 if (env->channels[channel_name].invited[i] == client_socket)
                     invitedf = 1;
@@ -269,7 +270,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         }
                         */
                     }
-                    else // not pass
+                    else // not pass and no limit
                     {
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -298,14 +299,21 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             }
                             */
                         }
+                        else // not pass and no limit
+                        {
+                            env->channels[channel_name].clients.push_back(client_socket);
+                            env->channels[channel_name].normalUsers.push_back(client_socket);
+                            env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                        }
+                    }
                     else // limit reach
                     {
+                        std::cout << "limits has been reached Invited but there is no  INVITE only restriction" << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
                         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                         return ;
-                    }
                     }
                 }
             }
@@ -331,7 +339,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                         }
                         */
                     }
-                    else // no key
+                    else // no key and no limit
                     {
                         env->channels[channel_name].clients.push_back(client_socket);
                         env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -360,14 +368,21 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             }
                             */
                         }
+                        else // no key and no limit
+                        {
+                            env->channels[channel_name].clients.push_back(client_socket);
+                            env->channels[channel_name].normalUsers.push_back(client_socket);
+                            env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                        }
+                    }   
                     else // limit reached
                     {
+                        std::cout << "limits has been reached NOT invited  and  there is no  INVITE only restriction " << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
                         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                         return ;
-                    }
                     }
                 }
             }
