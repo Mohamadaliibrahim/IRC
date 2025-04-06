@@ -265,7 +265,6 @@ void handle_client(int client_socket, t_environment *env)
         else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set))
         {
             char a = '\0';
-            std::cout << "mhmd ali gay extra" << std::endl;
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
             mode_func(client_socket,jnde,env);

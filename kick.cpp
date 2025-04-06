@@ -127,8 +127,10 @@ int parse_kick(const std::string &cmd_line, std::string &channel, std::string &n
 void kick_func(int client_sd, const std::string &cmd, t_environment *env)
 {
     std::string channel;
-    std::string nick;    // may hold "nick1,nick2,nick3"
     std::string comment;
+    std::string nick = env->clients[client_sd].nickname;
+    std::string user = env->clients[client_sd].username;
+    std::string serverName = "my.irc.server";
 
     // 1) Parse the command
     int parseResult = parse_kick(cmd, channel, nick, comment, client_sd, env);
@@ -209,6 +211,17 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
     for (size_t idx = 0; idx < nicknames.size(); idx++)
     {
         std::string targetNick = nicknames[idx];
+
+        if (env->clients[client_sd].nickname == targetNick)
+        {
+            std::ostringstream oss;
+            oss << ":" << serverName << " " << nick << " " << channel << " :KICK you can't kick yourself\r\n";
+            std::string message = oss.str();
+            message = sanitize_message(message);
+            send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
+            //std::cout << "migga you can't kick yourself" << std::endl;
+            continue ;
+        }
 
         // Trim leading whitespace - remove chars from front
         while (!targetNick.empty() && isspace(targetNick[0]))

@@ -128,9 +128,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         message = sanitize_message(message);
         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
     }
-    for (std::vector<ChanSecParse>::iterator it = jnde.begin(); it != jnde.end(); ++it)
+    for (std::vector<ChanSecParse>::iterator it = jnde.begin(); it != jnde.end(); it++)
     {
         std::string channel_name = trim_that_last(it->chan);
+        std::string given_pass = it->pass;
         
         channel_name = trim_that_first(channel_name);
         channel_name = trim_that_last(channel_name);
@@ -288,13 +289,13 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if(env->channels[channel_name].IsThereAPass == 1) // with pass
                     {
-                        /*if (check the if the password is ==  env->channels[channel_name].pass )// if correct pass
+                        if (given_pass ==  env->channels[channel_name].pass)
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
-                             env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
+                            env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                         }
-                        else // incorrect  pass
+                        else 
                         {
                             oss << ":" << serverName << " 475 " << nick << " " << channel_name << " :Cannot join channel (+k) - incorrect pass\r\n";
                             message = oss.str();
@@ -302,7 +303,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                             return ;
                         }
-                        */
                     }
                     else // not pass and no limit
                     {
@@ -317,7 +317,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {
                         if(env->channels[channel_name].IsThereAPass == 1) // pass required
                         {
-                            /*if (check the if the password is ==  env->channels[channel_name].pass) // correct pass
+                            if (given_pass ==  env->channels[channel_name].pass) // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -331,7 +331,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                                 send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                                 return ;
                             }
-                            */
                         }
                         else // not pass and no limit
                         {
@@ -357,7 +356,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if(env->channels[channel_name].IsThereAPass == 1) //check key
                     {
-                        /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
+                        if (given_pass ==  env->channels[channel_name].pass)  // correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -371,7 +370,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                             return ;
                         }
-                        */
                     }
                     else // no key and no limit
                     {
@@ -386,7 +384,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {
                         if(env->channels[channel_name].IsThereAPass == 1) // pass required
                         {
-                            /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
+                            if (given_pass ==  env->channels[channel_name].pass)  // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -400,7 +398,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                                 send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                                 return ;
                             }
-                            */
                         }
                         else // no key and no limit
                         {
