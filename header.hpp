@@ -45,6 +45,12 @@ struct Channel
     int TopicLock;
 };
 
+struct ChanSecParse
+{
+    std::string chan;
+    std::string pass;
+};
+
 struct Client
 {
     bool        authenticated;

@@ -11,7 +11,6 @@ Channel create_channel(std::string channel_name,int clientsocket)
     new_one.superUser = clientsocket;
     new_one.topic = "";
     new_one.IsInviteOnly = 0;
-    std::cout << "fou2ad smiley gay" << std::endl;
     new_one.IsThereAPass = -1;
     new_one.pass = "";
     new_one.TopicLock = -1;
@@ -29,61 +28,112 @@ std::string trim_that_last(const std::string& str)
     return str.substr(0, end + 1);
 }
 
-std::vector<std::string> split_on_comma(const std::string &str)
+int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
 {
-    std::vector<std::string> result;
-    std::string word;
-    std::istringstream stream(str);
+    ChanSecParse tmp;
+    std::vector<std::string> chans;
+    std::vector<std::string> passs;
+    int i = 0;
+    int chanf = 0;
 
-    while (std::getline(stream, word, ','))
+    if (strncmp(cmd.c_str(), "JOIN ", 5) != 0)
     {
-        word.erase(std::remove(word.begin(), word.end(), '\r'), word.end());
-        if (!word.empty())
-            result.push_back(word);
+        return -3;
+    }
+    i += 5;
+    while (cmd[i] != '\0')
+    {
+        if (chanf == 0 && cmd[i] != '#')
+        {
+            return -4;
+        }
+        int j = i;
+        while (!isspace(cmd[j]) && cmd[j] != '\0' && cmd[j] != ',')
+            j++;
+        if (chanf == 0)
+            chans.push_back(cmd.substr(i, j - i));
+        else
+            passs.push_back(cmd.substr(i, j - i));
+        i = j;
+        if (cmd[i] != '\0' && isspace(cmd[i]))
+        {
+            if (chanf == 1)
+            {
+                std::cout << "MIGGA TOO MANY ARGUMENTS\n";
+                return -5;
+            }
+            chanf = 1;
+        }
+        if (cmd[i] != '\0')
+            i++;
     }
 
-    return result;
+    if (passs.size() == 0)
+    {
+        for (int i = 0; i < (int)chans.size(); i++)
+        {
+            tmp.chan = chans[i];
+            parseData.push_back(tmp);
+        }
+        return 1;
+    }
+    else
+    {
+        if (passs.size() != chans.size())
+        {
+            std::cout << "THE NUMBER OF CHANNELS AND PASSWORDS DOES NOT MATCH\n";
+            return -2;
+        }
+        for (int i = 0; i < (int)chans.size(); i++)
+        {
+            tmp.chan = chans[i];
+            tmp.pass = passs[i];
+            parseData.push_back(tmp);
+        }
+        return 2;
+    }
 }
-
-//JOIN #general,#chatroom
-
-#include "header.hpp"
 
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
     int nf = 0, invitedf = 0;
-    std::vector<std::string> channels = split_on_comma(buffer);
+    std::vector<ChanSecParse> jnde;
+    int res = parse_join(buffer, jnde);
+    // std::vector<std::string> channels = split_on_comma(buffer);
     std::string nick = env->clients[client_socket].nickname;
     std::string user = env->clients[client_socket].username;
     std::string serverName = "my.irc.server";
     std::ostringstream oss;
     std::string message;
-    if (channels.empty())
+    if (res == -3)
     {
-        std::string error = "Invalid JOIN command format.\n";
-        error = sanitize_message(error);
-        send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
+        oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
+        message = oss.str();
+        message = sanitize_message(message);
+        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
         return;
     }
-    for (std::vector<std::string>::iterator it = channels.begin(); it != channels.end(); ++it)
+    if (res == -4)
     {
-        std::string channel_name = trim_that_last(*it);
-        if (strncmp((*it).c_str(), "JOIN", 4) == 0)
-        {
-            std::vector<std::string> a = split_on_space(*it, ' ');
-            channel_name = a[1];
-        }
+        oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
+        message = oss.str();
+        message = sanitize_message(message);
+        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+        return ;
+    }
+    if (res == -5)
+    {
+        oss << ":" << serverName << " 461 " << nick << " :JOIN not enough Parameters\r\n";
+        message = oss.str();
+        message = sanitize_message(message);
+        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+    }
+    for (std::vector<ChanSecParse>::iterator it = jnde.begin(); it != jnde.end(); ++it)
+    {
+        std::string channel_name = trim_that_last(it->chan);
         
         channel_name = trim_that_first(channel_name);
         channel_name = trim_that_last(channel_name);
-
-        if (channel_name.empty() || channel_name[0] != '#') 
-        {
-            std::string error = "Invalid channel name.\n";
-            error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
-            continue;
-        }
 
         bool already_in_channel = false;
         
@@ -104,22 +154,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             send(client_socket, already_in_channel_msg.c_str(), already_in_channel_msg.size(), MSG_NOSIGNAL);
             continue;
         }
-
-        // int jnde = 0;
-        // // Create channel if it doesn't exist
-        // std::cout << "jnde before that shit: " << jnde << "\n";
-        // if (env->channels.find(channel_name) == env->channels.end())
-        // {
-        //     jnde = 1;
-        //     // std::cout << "jnde is here: " << client_socket << "\n";
-        //     env->channels[channel_name] = create_channel(channel_name,client_socket);
-        //     // env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
-        //     // env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
-        //     std::cout << env->clients[client_socket].nickname << " created new channel: " << channel_name << std::endl;
-            
-        // }
-
-        // std::cout << "jnde after that shit: " << jnde << "\n";
 
         int cf = 0;
 
@@ -169,7 +203,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if (env->channels[channel_name].IsThereAPass == 1) // pass 
                     {
-                        /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                        /*if (check the if the password is ==  env->channels[channel_name].pass) // correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -198,7 +232,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {   
                         if (env->channels[channel_name].IsThereAPass == 1) // pass 
                         {
-                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                            /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -223,7 +257,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     }
                     else // limit reached
                     {
-                        std::cout << "limits has been reached  in the invite only and invited " << std::endl;
+                        std::cout << "limits has been reached  in the invite only and invited " << std::endl; // to be removed 
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
@@ -254,7 +288,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if(env->channels[channel_name].IsThereAPass == 1) // with pass
                     {
-                        /*if () check the if the password is ==  env->channels[channel_name].pass // if correct pass
+                        /*if (check the if the password is ==  env->channels[channel_name].pass )// if correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -283,7 +317,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {
                         if(env->channels[channel_name].IsThereAPass == 1) // pass required
                         {
-                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                            /*if (check the if the password is ==  env->channels[channel_name].pass) // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -323,7 +357,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if(env->channels[channel_name].IsThereAPass == 1) //check key
                     {
-                        /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                        /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -352,7 +386,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {
                         if(env->channels[channel_name].IsThereAPass == 1) // pass required
                         {
-                            /*if () check the if the password is ==  env->channels[channel_name].pass // correct pass
+                            /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
