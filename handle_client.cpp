@@ -44,6 +44,7 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
         std::cout << "Client failed to authenticate." << std::endl;
     }
 }
+
 void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::vector<std::string> a = split_on_space(buffer, ' ');
@@ -86,6 +87,7 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
     std::cout << "Client's nickname set to: " << a[1] << std::endl;
     (*env)->clients[client_socket].nick_flag = true;
 }
+
 void ft_user(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::vector<std::string> a = split_on_space(buffer, ' ');
@@ -143,6 +145,7 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
               << "\nRealname set to: " << (*env)->clients[client_socket].realname << std::endl;
     (*env)->clients[client_socket].user_flag = true;
 }
+
 std::vector<std::string> split_on_backspash_n(const std::string &str)
 {
     std::vector<std::string> result;
@@ -157,6 +160,7 @@ std::vector<std::string> split_on_backspash_n(const std::string &str)
     }
     return result;
 }
+
 std::vector<std::string> split_on_space(const std::string &str, char delimiter)
 {
     std::vector<std::string> result;
@@ -169,6 +173,7 @@ std::vector<std::string> split_on_space(const std::string &str, char delimiter)
     }
     return result;
 }
+
 void trim_start(char* buffer)
 {
     size_t start = 0;
@@ -183,6 +188,7 @@ void trim_start(char* buffer)
     }
     buffer[length - start] = '\0';
 }
+
 std::string trim_that_first(const std::string& str)
 {
     size_t start = str.find_first_not_of(" \t\r\n");
@@ -190,6 +196,7 @@ std::string trim_that_first(const std::string& str)
         return "";
     return str.substr(start);
 }
+
 void do_buffer(int client_socket, t_environment *env, const std::string &buffer)
 {
     std::vector<std::string> x = split_on_backspash_n(buffer);
@@ -218,12 +225,14 @@ void do_buffer(int client_socket, t_environment *env, const std::string &buffer)
         it++;
     }
 }
+
 void    check_which_one_is_flase(const std::string &buffer, t_environment *env, int client_socket)
 {
     do_buffer(client_socket, env, buffer);
     if ((env->clients[client_socket].pass_flag) && (env->clients[client_socket].nick_flag) && (env->clients[client_socket].user_flag))
             env->clients[client_socket].all_set = true;
 }
+
 void handle_client(int client_socket, t_environment *env)
 {
     char buffer[1024];
@@ -269,30 +278,60 @@ void handle_client(int client_socket, t_environment *env)
             std::string jnde = trim_that_last_with_flag(buffer, &a);
             mode_func(client_socket,jnde,env);
         }
-        // else if (!(env->clients[client_socket].all_set))
-        // {
-        //     std::string error = "You need to register first :D\n";
-        //     error = sanitize_message(error);
-        //     send(client_socket, error.c_str(), error.size(), 0);
-        // }
-        // else
-        // {
-        //     std::ostringstream message;
-        //     message << "Command not found: " << buffer << "\n";
-        //     std::string error = message.str();
-        //     error = sanitize_message(error);
-        //     send(client_socket, error.c_str(), error.size(), 0);
-        //     std::cout<< env->clients[client_socket].nickname << " send's " << buffer << std::endl;
-        // }
-        // else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
-        // {
-        // }
     }
     else if (bytes_received == 0)
     {
+        // --- EDIT --- enhanced clean‑up when a client disconnects
         std::cout << "Client disconnected." << std::endl;
-        close(client_socket);
-        env->clients.erase(client_socket);
+
+        int leaving_socket = client_socket;
+        std::string leaving_nick = env->clients[leaving_socket].nickname;
+
+        // iterate over every channel to remove the user and handle ownership
+        for (std::map<std::string, Channel>::iterator it = env->channels.begin(); it != env->channels.end(); it++)
+        {
+            Channel &chan = it->second;
+
+            // remove from membership vectors
+            chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
+            chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end());
+            chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
+
+            // if user was superUser, elect a replacement
+            if (chan.superUser == leaving_socket)
+            {
+                if (!chan.admins.empty())
+                {
+                    chan.superUser = chan.admins.front();
+                }
+                else if (!chan.clients.empty())
+                {
+                    chan.superUser = chan.clients.front();
+                }
+                else
+                {
+                    chan.superUser = -1; // channel will be removed below
+                }
+
+                if (chan.superUser != -1)
+                {
+                    std::cout << "New super user for channel " << chan.name
+                              << " is " << env->clients[chan.superUser].nickname << std::endl;
+                }
+            }
+
+            // delete empty channels
+            if (chan.clients.empty() && chan.normalUsers.empty() && chan.admins.empty())
+            {
+                std::cout << "Channel " << chan.name << " is now empty and will be removed." << std::endl;
+                env->channels.erase(it++);
+                continue;
+            }
+        }
+
+        close(leaving_socket);
+        env->clients.erase(leaving_socket);
+        // --- EDIT --- end of enhanced clean‑up
     }
     else
     {

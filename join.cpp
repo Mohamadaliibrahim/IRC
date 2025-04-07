@@ -190,6 +190,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
+            // send MODE +o to channel creator and all present users                        // *** CHANGED ***
+            std::string mode_msg = ":" + env->clients[client_socket].nickname + "!" + env->clients[client_socket].username + "@localhost MODE " + channel_name + " +o " + env->clients[client_socket].nickname + "\r\n"; // *** CHANGED ***
+            for (std::vector<int>::iterator itc = env->channels[channel_name].clients.begin(); itc != env->channels[channel_name].clients.end(); ++itc)                                           // *** CHANGED ***
+                send(*itc, mode_msg.c_str(), mode_msg.size(), MSG_NOSIGNAL);                                                                                                                   // *** CHANGED ***
         }
         else if  (env->channels[channel_name].IsInviteOnly == 1) // is invited only
         {
@@ -439,7 +443,12 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         std::string user_list_msg = ":server_name 353 " + env->clients[client_socket].nickname + " = " + channel_name + " :";
         for (std::vector<int>::iterator it_channel = env->channels[channel_name].clients.begin(); it_channel != env->channels[channel_name].clients.end(); ++it_channel)
         {
-            user_list_msg += env->clients[*it_channel].nickname + " ";
+            // prefix '@' for channel operators                                                                                                            // *** CHANGED ***
+            bool is_admin = false;                                                                                                                        // *** CHANGED ***
+            for (std::vector<int>::iterator it_ad = env->channels[channel_name].admins.begin(); it_ad != env->channels[channel_name].admins.end(); ++it_ad) // *** CHANGED ***
+                if (*it_ad == *it_channel) { is_admin = true; break; }                                                                                    // *** CHANGED ***
+            std::string prefix = is_admin ? "@" : "";                                                                                                     // *** CHANGED ***
+            user_list_msg += prefix + env->clients[*it_channel].nickname + " ";                                                                           // *** CHANGED ***
         }
         user_list_msg += "\n";
         user_list_msg = sanitize_message(user_list_msg);
