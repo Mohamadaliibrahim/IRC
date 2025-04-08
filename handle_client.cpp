@@ -236,6 +236,7 @@ void    check_which_one_is_flase(const std::string &buffer, t_environment *env, 
 void handle_client(int client_socket, t_environment *env)
 {
     char buffer[1024];
+    int jnde = 0;                           (was static and global to all clients)
     memset(buffer, 0, sizeof(buffer));
     ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     trim_start(buffer);
@@ -247,11 +248,18 @@ void handle_client(int client_socket, t_environment *env)
         if (!(env->clients[client_socket].all_set))
             check_which_one_is_flase(buffer, env, client_socket);
         else if ((strncmp(buffer, "JOIN ", 5) == 0) && (env->clients[client_socket].all_set))
+        {
+            jnde = 1;                      
             ft_join(client_socket, buffer, env);
+        }
         else if ((strncmp(buffer, "PRIVMSG ", 8) == 0) && (env->clients[client_socket].all_set))
+        {
+            jnde = 0;                      
             ft_private_message(client_socket, buffer, env);
+        }
         else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
         {
+            jnde = 0;                      
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
@@ -259,6 +267,7 @@ void handle_client(int client_socket, t_environment *env)
         }
         else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
         {
+            jnde = 0;                      
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
@@ -266,35 +275,42 @@ void handle_client(int client_socket, t_environment *env)
         }
         else if ((strncmp(buffer, "KICK ", 5) == 0) && (env->clients[client_socket].all_set))
         {
+            jnde = 0;                      
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
             kick_func(client_socket,jnde,env);
         }
-        else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set))
+        else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set) && jnde != 1)  (jnde instead of static var)
         {
+            jnde = 0;                      
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
             mode_func(client_socket,jnde,env);
         }
+        else
+        {
+            jnde = 0;                      
+        }
     }
     else if (bytes_received == 0)
     {
-        // --- EDIT --- enhanced clean‑up when a client disconnects
+        // --- enhanced clean‑up when a client disconnects
         std::cout << "Client disconnected." << std::endl;
 
         int leaving_socket = client_socket;
         std::string leaving_nick = env->clients[leaving_socket].nickname;
 
         // iterate over every channel to remove the user and handle ownership
-        for (std::map<std::string, Channel>::iterator it = env->channels.begin(); it != env->channels.end(); it++)
+        for (std::map<std::string, Channel>::iterator it = env->channels.begin();
+             it != env->channels.end(); )                                            (no ++it here)
         {
             Channel &chan = it->second;
 
             // remove from membership vectors
             chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
-            chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end());
+            chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end());  (was commented)
             chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
 
             // if user was superUser, elect a replacement
@@ -324,17 +340,13 @@ void handle_client(int client_socket, t_environment *env)
             if (chan.clients.empty() && chan.normalUsers.empty() && chan.admins.empty())
             {
                 std::cout << "Channel " << chan.name << " is now empty and will be removed." << std::endl;
-                env->channels.erase(it++);
-                continue;
+                env->channels.erase(it++);                                           (safe erase‑and‑advance)
+                continue;                                                           
             }
+            ++it;                                                                    (advance when not erased)
         }
-
         close(leaving_socket);
         env->clients.erase(leaving_socket);
-        // --- EDIT --- end of enhanced clean‑up
-    }
-    else
-    {
-        std::cerr << "Error receiving data from client." << std::endl;
+        // --- end of enhanced clean‑up
     }
 }
