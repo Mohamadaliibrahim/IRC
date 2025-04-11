@@ -279,6 +279,13 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
             continue;
         }
 
+        if (target_sd == ch.superUser && client_sd != ch.superUser)
+        {
+            send_numeric_reply(client_sd, nick, "482", channel,
+                               "Cannot kick channel founder");
+            continue;
+        }
+
         // 5c) Remove the target user from the channel
         ch.clients.erase(ch.clients.begin() + targetIndex);
         // Also remove from normalUsers if present

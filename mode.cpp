@@ -346,8 +346,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                     break;
                 }
                 std::string targetNick = modeParams[paramIndex++];
-
-                // Find the target user by nickname
+            
+                /* 1) locate the target socket */
                 int target_sd = -1;
                 for (std::map<int, Client>::iterator it = env->clients.begin();
                      it != env->clients.end(); ++it)
@@ -367,9 +367,10 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "No such nick/channel");
                     break;
                 }
-                // Check if target user is on the channel
+            
+                /* 2) make sure the target is on the channel */
                 bool targetOnChannel = false;
-                for (size_t i = 0; i < ch.clients.size(); i++)
+                for (size_t i = 0; i < ch.clients.size(); ++i)
                 {
                     if (ch.clients[i] == target_sd)
                     {
@@ -379,7 +380,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 }
                 if (!targetOnChannel)
                 {
-                    // 441 ERR_USERNOTINCHANNEL
                     send_numeric_reply(client_sd,
                                        env->clients[client_sd].nickname,
                                        "441",
@@ -387,13 +387,12 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "They aren't on that channel");
                     break;
                 }
-
-                // Apply +o or -o
+            
+                /* 3) handle +o */
                 if (sign == '+')
                 {
-                    // Add to admins if not present
                     bool alreadyAdmin = false;
-                    for (size_t i = 0; i < ch.admins.size(); i++)
+                    for (size_t i = 0; i < ch.admins.size(); ++i)
                     {
                         if (ch.admins[i] == target_sd)
                         {
@@ -403,24 +402,47 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                     }
                     if (!alreadyAdmin)
                         ch.admins.push_back(target_sd);
-                    appliedModes.push_back('+');
-                    appliedModes.push_back('o');
+                
+                    appliedModes += "+o";
+                    break;
                 }
-                else
+            
+                /* 4) handle -o (removal) */
+                /* --- new rules start here ----------------------------------------- */
+                /* founder can never be stripped; only founder can strip others       */
+                if (target_sd == ch.superUser)
                 {
-                    // Remove from admins if present
-                    for (std::vector<int>::iterator it = ch.admins.begin();
-                         it != ch.admins.end(); ++it)
-                    {
-                        if (*it == target_sd)
-                        {
-                            ch.admins.erase(it);
-                            break;
-                        }
-                    }
-                    appliedModes.push_back('-');
-                    appliedModes.push_back('o');
+                    send_numeric_reply(client_sd,
+                                       env->clients[client_sd].nickname,
+                                       "482",
+                                       channel,
+                                       "Cannot remove operator status from channel founder");
+                    break;
                 }
+                /* if the requester is NOT the founder and is trying to strip
+                   someone other than himself, deny it                               */
+                if (client_sd != ch.superUser && client_sd != target_sd)
+                {
+                    send_numeric_reply(client_sd,
+                                       env->clients[client_sd].nickname,
+                                       "482",
+                                       channel,
+                                       "You can only remove your own operator status");
+                    break;
+                }
+                /* --- new rules end here ------------------------------------------- */
+            
+                /* actually remove */
+                for (std::vector<int>::iterator it = ch.admins.begin();
+                     it != ch.admins.end(); ++it)
+                {
+                    if (*it == target_sd)
+                    {
+                        ch.admins.erase(it);
+                        break;
+                    }
+                }
+                appliedModes += "-o";
                 break;
             }
 
@@ -430,7 +452,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 std::string unknown(1, c);
                 send_numeric_reply(client_sd,
                                    env->clients[client_sd].nickname,
-                                   "472", // ERR_UNKNOWNMODE
+                                   "472",
                                    unknown,
                                    "is unknown mode char");
                 break;

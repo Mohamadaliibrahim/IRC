@@ -236,7 +236,7 @@ void    check_which_one_is_flase(const std::string &buffer, t_environment *env, 
 void handle_client(int client_socket, t_environment *env)
 {
     char buffer[1024];
-    int jnde = 0;                          // <--- FIX (was static and global to all clients)
+    static int jnde;                          // <--- FIX (was static and global to all clients)
     memset(buffer, 0, sizeof(buffer));
     ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     trim_start(buffer);
@@ -296,13 +296,10 @@ void handle_client(int client_socket, t_environment *env)
     }
     else if (bytes_received == 0)
     {
-        // --- enhanced clean‑up when a client disconnects
         std::cout << "Client disconnected." << std::endl;
 
         int leaving_socket = client_socket;
         std::string leaving_nick = env->clients[leaving_socket].nickname;
-
-        // iterate over every channel to remove the user and handle ownership
         for (std::map<std::string, Channel>::iterator it = env->channels.begin();
              it != env->channels.end(); )
         {
