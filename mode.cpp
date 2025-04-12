@@ -10,7 +10,7 @@ static void send_numeric_reply(int client_sd, const std::string &yourNick, const
 
     std::string msg = sanitize_message(ss.str());
     send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
-}
+} 
 
 int parse_mode(const std::string &cmd_line, std::string &channel, std::string &modes, std::vector<std::string> &modeParams, int client_socket, t_environment *env)
 {
@@ -33,7 +33,7 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
                            env->clients[client_socket].nickname,
                            "461",
                            "MODE",
-                           "Not enough parameters");
+                           "Not enough parameters here");
         return -1;
     }
     if (strncmp(cmd.c_str(), "MODE", 4) != 0)
@@ -76,12 +76,7 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
         i++;
     if (i >= (int)cmd.size())
     {
-        send_numeric_reply(client_socket,
-                           env->clients[client_socket].nickname,
-                           "461",
-                           "MODE",
-                           "Not enough parameters");
-        return -1;
+        return -10;
     }
     start = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
@@ -176,7 +171,17 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                            "You're not on that channel");
         return;
     }
-
+    if (parseResult == -10)
+    {
+        std::stringstream ss;
+        ss << "Invite mode: "  <<(ch.IsInviteOnly == 1 ? "+i" : "-i")
+        << "\nKey mode: " << (ch.IsThereAPass == 1 ? "+k" : "-k")
+        << "\nlimit is : " << (ch.MembersLimit == -1 ? "no limit" : ""+ch.MembersLimit)
+        << "\nTOPIC LOCKED: " << (ch.IsThereAPass == 1 ? "YES\n" : "NO\n");
+        std::string msg = sanitize_message(ss.str());
+        send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        return ;
+    }
     // 4) Check if user is superUser or admin (operator privileges)
     bool isOperator = false;
     if (env->channels[channel].superUser == client_sd)
@@ -460,6 +465,17 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         }
     } // end for
 
+    if (modes.empty())
+    {
+        std::stringstream ss;
+        ss << "Invite mode: "  <<(ch.IsInviteOnly == 1 ? "+i" : "-i")
+        << " Key mode: " << (ch.IsThereAPass == 1 ? "+k" : "-k")
+        << " limit is : " << (ch.MembersLimit == -1 ? "no limit" : ""+ch.MembersLimit)
+        << " TOPIC LOCKED: " << (ch.IsThereAPass == 1 ? "YES" : "NO");
+        std::string msg = sanitize_message(ss.str());
+        send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        return ;
+    }
     // If nothing was applied, we can just return
     if (appliedModes.empty())
         return;
