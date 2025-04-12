@@ -305,56 +305,73 @@ void handle_client(int client_socket, t_environment *env)
              it != env->channels.end(); )
         {
             Channel &chan = it->second;
-
-            std::stringstream ss;
-            ss << ":" << leaving_nick
-               << "!" << leaving_user
-               << "@localhost KICK " << chan.name
-               << ":Left the channel" << std::endl;
-    
-            std::string kickMsg = sanitize_message(ss.str());
-            chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
-            chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end()); // <--- FIX (was commented)
-            chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
-    
-            // Send to remaining users in the channel
+            bool isInChannel = false;
             for (size_t i = 0; i < chan.clients.size(); i++)
             {
-                send(chan.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
+                if (chan.clients[i] == client_socket)
+                {
+                    isInChannel = true;
+                    break;
+                }
             }
-            // remove from membership vectors
-
-            // if user was superUser, elect a replacement
-            if (chan.superUser == leaving_socket)
+            if (!isInChannel)
             {
-                if (!chan.admins.empty())
-                {
-                    chan.superUser = chan.admins.front();
-                }
-                else if (!chan.clients.empty())
-                {
-                    chan.superUser = chan.clients.front();
-                }
-                else
-                {
-                    chan.superUser = -1;
-                }
-
-                if (chan.superUser != -1)
-                {
-                    std::cout << "New super user for channel " << chan.name
-                              << " is " << env->clients[chan.superUser].nickname << std::endl;
-                }
+                continue;
             }
-
-            // delete empty channels
-            if (chan.clients.empty() && chan.normalUsers.empty() && chan.admins.empty())
+            else 
             {
-                std::cout << "Channel " << chan.name << " is now empty and will be removed." << std::endl;
-                env->channels.erase(it++);
-                continue;                 
+                std::cout << "here\n";
+                std::stringstream ss;
+                ss << ":" << leaving_nick
+                   << "!" << leaving_user
+                   << "@localhost KICK " << chan.name
+                   << " " << leaving_nick
+                   << ": left the channel" << std::endl; 
+                
+                std::string kickMsg = sanitize_message(ss.str());
+                chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
+                chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end()); // <--- FIX (was commented)
+                chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
+                
+                // Send to remaining users in the channel
+                for (size_t i = 0; i < chan.clients.size(); i++)
+                {
+                    send(chan.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
+                }
+                // remove from membership vectors
+
+                // if user was superUser, elect a replacement
+                if (chan.superUser == leaving_socket)
+                {
+                    if (!chan.admins.empty())
+                    {
+                        chan.superUser = chan.admins.front();
+                    }
+                    else if (!chan.clients.empty())
+                    {
+                        chan.superUser = chan.clients.front();
+                    }
+                    else
+                    {
+                        chan.superUser = -1;
+                    }
+
+                    if (chan.superUser != -1)
+                    {
+                        std::cout << "New super user for channel " << chan.name
+                                  << " is " << env->clients[chan.superUser].nickname << std::endl;
+                    }
+                }
+
+                // delete empty channels
+                if (chan.clients.empty() && chan.normalUsers.empty() && chan.admins.empty())
+                {
+                    std::cout << "Channel " << chan.name << " is now empty and will be removed." << std::endl;
+                    env->channels.erase(it++);
+                    continue;                 
+                }
+                ++it;                         
             }
-            ++it;                         
         }
         close(leaving_socket);
         env->clients.erase(leaving_socket);
