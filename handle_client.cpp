@@ -300,15 +300,29 @@ void handle_client(int client_socket, t_environment *env)
 
         int leaving_socket = client_socket;
         std::string leaving_nick = env->clients[leaving_socket].nickname;
+        std::string leaving_user = env->clients[leaving_socket].username;
         for (std::map<std::string, Channel>::iterator it = env->channels.begin();
              it != env->channels.end(); )
         {
             Channel &chan = it->second;
 
-            // remove from membership vectors
+            std::stringstream ss;
+            ss << ":" << leaving_nick
+               << "!" << leaving_user
+               << "@localhost KICK " << chan.name
+               << ":Left the channel" << std::endl;
+    
+            std::string kickMsg = sanitize_message(ss.str());
             chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
             chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end()); // <--- FIX (was commented)
             chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
+    
+            // Send to remaining users in the channel
+            for (size_t i = 0; i < chan.clients.size(); i++)
+            {
+                send(chan.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
+            }
+            // remove from membership vectors
 
             // if user was superUser, elect a replacement
             if (chan.superUser == leaving_socket)

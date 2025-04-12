@@ -208,7 +208,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 {
                     if (env->channels[channel_name].IsThereAPass == 1) // pass 
                     {
-                        /*if (check the if the password is ==  env->channels[channel_name].pass) // correct pass
+                        if (given_pass ==  env->channels[channel_name].pass) // correct pass
                         {
                             env->channels[channel_name].clients.push_back(client_socket);
                             env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -222,7 +222,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                             return ;
                         }
-                        */
                     }
                     else // not pass and no limit
                     {
@@ -237,7 +236,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     {   
                         if (env->channels[channel_name].IsThereAPass == 1) // pass 
                         {
-                            /*if (check the if the password is ==  env->channels[channel_name].pass)  // correct pass
+                            if (given_pass ==  env->channels[channel_name].pass)  // correct pass
                             {
                                 env->channels[channel_name].clients.push_back(client_socket);
                                 env->channels[channel_name].normalUsers.push_back(client_socket);
@@ -251,7 +250,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                                 send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
                                 return ;
                             }
-                            */
                         }
                         else // no pass and available space
                         {
