@@ -141,13 +141,17 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         {
             oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";
             env->channels[chan].invited.push_back(t_sd);
+            std::string msg = sanitize_message(oss.str());
+            send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            
         }
         else 
         {
             oss << ":" << serverName << " 482 " << nick << " :INVITE :Invite Failed, You're not channel operator" << "\r\n";
+            std::string msg = sanitize_message(oss.str());
+            send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            return;    
         }
-        std::string msg = sanitize_message(oss.str());
-        send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
     }
     else  if (cf && env->channels[chan].IsInviteOnly == -1)
     {
@@ -157,7 +161,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         std::string msg = sanitize_message(oss.str());
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
     }
-        std::stringstream ss;
+    std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
            << "@localhost"         // <-- Always use "localhost"
