@@ -464,18 +464,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
             }
         }
     } // end for
-
-    if (modes.empty())
-    {
-        std::stringstream ss;
-        ss << "Invite mode: "  <<(ch.IsInviteOnly == 1 ? "+i" : "-i")
-        << " Key mode: " << (ch.IsThereAPass == 1 ? "+k" : "-k")
-        << " limit is : " << (ch.MembersLimit == -1 ? "no limit" : ""+ch.MembersLimit)
-        << " TOPIC LOCKED: " << (ch.IsThereAPass == 1 ? "YES" : "NO");
-        std::string msg = sanitize_message(ss.str());
-        send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
-        return ;
-    }
     // If nothing was applied, we can just return
     if (appliedModes.empty())
         return;
