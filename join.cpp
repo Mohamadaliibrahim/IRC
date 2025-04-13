@@ -66,8 +66,6 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
         {
             if (chanf == 1)
             {
-                //fo2ad zabeta bala bahdale
-                std::cout << "MIGGA TOO MANY ARGUMENTS\n";
                 return -5;
             }
             chanf = 1;
@@ -92,7 +90,6 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
         //number of channels given is the same as the nm of channels
         if (passs.size() != chans.size())
         {
-            std::cout << "THE NUMBER OF CHANNELS AND PASSWORDS DOES NOT MATCH\n";
             return -2;
         }
         for (int i = 0; i < (int)chans.size(); i++)
@@ -117,7 +114,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
     std::string message;
 
     //in case there is a bas channel given
-    if (res == -3)
+    if (res == -3 || res == -4)
     {
         oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
         message = oss.str();
@@ -126,18 +123,8 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         return;
     }
 
-    //in case there is a bas channel given
-    if (res == -4)
-    {
-        oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
-        message = oss.str();
-        message = sanitize_message(message);
-        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
-        return ;
-    }
-
     //in case not enough parameters are given
-    if (res == -5)
+    if (res == -5 || res == -2)
     {
         oss << ":" << serverName << " 461 " << nick << " :JOIN not enough Parameters\r\n";
         message = oss.str();
@@ -188,7 +175,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 
         if (cf == 0)
         {
-            std::cout << channel_name << "jnde channel" << std::endl;
             env->channels[channel_name] = create_channel(channel_name,client_socket);
         }
 
@@ -209,7 +195,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
-            // send MODE +o to channel creator and all present users                        // *** CHANGED ***
+            // send MODE +o to channel creator and all present users
             std::string mode_msg = ":" + env->clients[client_socket].nickname + "!" + env->clients[client_socket].username + "@localhost MODE " + channel_name + " +o " + env->clients[client_socket].nickname + "\r\n"; // *** CHANGED ***
             for (std::vector<int>::iterator itc = env->channels[channel_name].clients.begin(); itc != env->channels[channel_name].clients.end(); ++itc)                                           // *** CHANGED ***
                 send(*itc, mode_msg.c_str(), mode_msg.size(), MSG_NOSIGNAL);                                                                                                                   // *** CHANGED ***
@@ -279,7 +265,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     }
                     else // limit reached
                     {
-                        std::cout << "limits has been reached  in the invite only and invited " << std::endl; // to be removed 
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
@@ -362,7 +347,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     }
                     else // limit reach
                     {
-                        std::cout << "limits has been reached Invited but there is no  INVITE only restriction" << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
@@ -429,7 +413,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                     }   
                     else
                     {
-                        std::cout << "limits has been reached NOT invited  and  there is no  INVITE only restriction " << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
                         message = oss.str();
                         message = sanitize_message(message);
