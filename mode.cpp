@@ -166,7 +166,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     {
         std::string str;
         std::stringstream ss;
-        std::cout << ch.MembersLimit << std::endl;
         ss << "Invite mode: "  <<(ch.IsInviteOnly == 1 ? "+i" : "-i")
         << "\nKey mode: " << (ch.IsThereAPass == 1 ? "+k" : "-k");
         if (ch.MembersLimit == -1)
@@ -177,7 +176,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         {
           ss << "\nlimit is : "  << ch.MembersLimit; 
         }
-        ss << "\nTOPIC LOCKED: " << (ch.TopicLock == 1 ? "YES\n" : "NO\n");
+        ss << "\nTOPIC LOCKED: " << (ch.TopicLock == 1 ? "YES\n" : "NO\n")
+           << "Time of creation: " << ch.creationTime << "\n";
         std::string msg = sanitize_message(ss.str());
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
         return ;
