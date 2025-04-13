@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header/header.hpp"
 
 static void send_numeric_reply(int client_sd, const std::string &yourNick, const std::string &code, const std::string &arg, const std::string &text)
 {
@@ -17,16 +17,7 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
     std::string cmd = cmd_line;
     int i = 0;
 
-    // // 1) If command starts with ':', skip that prefix (like parse_kick)
-    // if (!cmd.empty() && cmd[0] == ':')
-    // {
-    //     while (i < (int)cmd.size() && cmd[i] != ' ')
-    //         i++;
-    //     if (i >= (int)cmd.size())
-    //         return -1;
-    //     cmd.erase(0, i + 1);
-    //     i = 0;
-    // }
+    //making sure that the command is at least "MODE "
     if (cmd.size() < 5)
     {
         send_numeric_reply(client_socket,

@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header/header.hpp"
 
 int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket, t_environment *env)
 {
@@ -8,28 +8,22 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
     std::string host = "localhost"; 
     std::string cmd = cmd_line;
     int i = 0;
-    //gpt 7atta idk le(ymkn shi 5asso b hex chat to test)
-    if (!cmd.empty() && cmd[0] == ':')
-    {
-        while (i < (int)cmd.size() && cmd[i] != ' ')
-            i++;
-        if (i >= (int)cmd.size())
-            return -1;
-        cmd.erase(0, i + 1);
-        i = 0;
-    }
-    //la hon
+    //makes sure that the command is at least "INVITE "(7 charachters)
     if (cmd.size() < 7)
         return -1;
     if (strncmp(cmd.c_str(), "INVITE", 6) != 0)
         return -1;
     if (!isspace(cmd[6]))
         return -1;
+
+    //skip spaces at the beginning and make sure there is parameters
     i = 6;
     while (i < (int)cmd.size() && isspace(cmd[i]))
         i++;
     if (i >= (int)cmd.size())
         return -1;
+
+    //parsing the nickname of the invited user
     int s = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
@@ -38,8 +32,12 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
         i++;
     if (i >= (int)cmd.size())
         return -1;
+
+    //skip the ':' in case of hexchat
     if (cmd[i] == ':')
         i++;
+
+    //parsing the channel name with its validation
     s = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
@@ -62,10 +60,15 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     std::string host = "localhost"; 
     std::string nick;
     std::string chan;
-    int af = 0;
+    int af = 0;//admin flag
+
+    //filling the nickname of the invited user and the channel invited
+    //to with syntax validation
     int parseResult = parse_invite(cmd, nick, chan, client_sd,env);
     if (parseResult == -1)
         return;
+
+    //making sure that the channel exist
     if (env->channels.find(chan) == env->channels.end())
     {
         std::ostringstream oss;
@@ -75,7 +78,10 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
-    int cf = 0;
+
+    int cf = 0;// client flag
+
+    //makning sure that the user inviting is a client in the channel
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
     {
         if (env->channels[chan].clients[i] == client_sd)
@@ -93,7 +99,10 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
-    int t_sd = -1;
+
+    int t_sd = -1;//fthe invited user descriptor
+
+    //getting the descriptor of the invited user with validation
     for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); it++)
     {
         if (it->second.nickname == nick)
@@ -111,6 +120,8 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
+
+    //testing if the invited user is already in teh channel invited to
     int in_chan = 0;
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
     {
@@ -129,6 +140,9 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
+
+    //in case of MODE +i of the channel, making sure that the user who
+    //is inviting is an admin
     if (cf && env->channels[chan].IsInviteOnly == 1)
     {
         for (int i = 0; i < (int)env->channels[chan].admins.size();i++)
@@ -169,7 +183,4 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
            << " :" << chan << "\n";
         std::string msg = sanitize_message(ss.str());
         send(t_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
-    // 9) Track the invited user
-    //    (Now using 'invitedUsers' vector in Channel; just push_back)
-    // env->channels[chan].invitedUsers.push_back(t_sd);
 }

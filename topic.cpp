@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "header/header.hpp"
 
 int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket, t_environment *env)
 {
@@ -7,11 +7,15 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
     std::string user = env->clients[client_socket].username; 
     std::string host = "localhost"; 
 	int i = 0;
+
+	//making sure that the command is at least "TOPIC "
 	if (strncmp(cmd.c_str(), "TOPIC ", 6) == 0 && isspace(cmd[5]))
 	{
 		i = 6;
 		while (isspace(cmd[i]))
 			i++;
+
+		//checking the channel name
 		if (cmd[i] != '#')
 		{
 			std::ostringstream oss;
@@ -23,6 +27,8 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 		}
 		else
 		{
+
+			//parsing the channel name
 			int j = 0;
 			while (!isspace(cmd[i + j]) && cmd[i + j] != '\0')
 				j++;
@@ -129,14 +135,6 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 				error = sanitize_message(error);
 				send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 			}
-			// else if (cf == 1 && af == 0)
-			// {
-			// 	std::ostringstream oss;
-       		// 	oss << ":" << serverName << " 482 " << nick << " :You're not a channel operator\r\n";
-			// 	std::string error = oss.str();
-			// 	error = sanitize_message(error);
-			// 	send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
-			// }
 		}
 		else
 		{

@@ -1,5 +1,6 @@
-#include "header.hpp"
+#include "header/header.hpp"
 
+//initializing the channel on creation
 Channel create_channel(std::string channel_name,int clientsocket)
 {
     Channel new_one;
@@ -18,6 +19,8 @@ Channel create_channel(std::string channel_name,int clientsocket)
     return (new_one);
 }
 
+//trim the punctuations from the end of the string
+//in case of hexchat (removing \t\n\r)
 std::string trim_that_last(const std::string& str)
 {
     size_t end = str.find_last_not_of(" \t\r\n");
@@ -28,18 +31,22 @@ std::string trim_that_last(const std::string& str)
     return str.substr(0, end + 1);
 }
 
+
 int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
 {
     ChanSecParse tmp;
     std::vector<std::string> chans;
     std::vector<std::string> passs;
     int i = 0;
-    int chanf = 0;
+    int chanf = 0;//channel flag
 
+    //making sure that the command is "JOIN " at least
     if (strncmp(cmd.c_str(), "JOIN ", 5) != 0)
     {
         return -3;
     }
+
+    //parsing the channel name (or channels)
     i += 5;
     while (cmd[i] != '\0')
     {
@@ -59,6 +66,7 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
         {
             if (chanf == 1)
             {
+                //fo2ad zabeta bala bahdale
                 std::cout << "MIGGA TOO MANY ARGUMENTS\n";
                 return -5;
             }
@@ -68,6 +76,7 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
             i++;
     }
 
+    //in case only channels are given (without passwords)
     if (passs.size() == 0)
     {
         for (int i = 0; i < (int)chans.size(); i++)
@@ -79,6 +88,8 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
     }
     else
     {
+        //in the other case (with passwords) parsing them and making sure that the
+        //number of channels given is the same as the nm of channels
         if (passs.size() != chans.size())
         {
             std::cout << "THE NUMBER OF CHANNELS AND PASSWORDS DOES NOT MATCH\n";
@@ -96,15 +107,16 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
 
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
-    int nf = 0, invitedf = 0;
+    int nf = 0, invitedf = 0;//new flag and invited user flag
     std::vector<ChanSecParse> jnde;
-    int res = parse_join(buffer, jnde);
-    // std::vector<std::string> channels = split_on_comma(buffer);
+    int res = parse_join(buffer, jnde);//getting the result from the parse function
     std::string nick = env->clients[client_socket].nickname;
     std::string user = env->clients[client_socket].username;
     std::string serverName = "my.irc.server";
     std::ostringstream oss;
     std::string message;
+
+    //in case there is a bas channel given
     if (res == -3)
     {
         oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
@@ -113,6 +125,8 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
         return;
     }
+
+    //in case there is a bas channel given
     if (res == -4)
     {
         oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
@@ -121,6 +135,8 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
         return ;
     }
+
+    //in case not enough parameters are given
     if (res == -5)
     {
         oss << ":" << serverName << " 461 " << nick << " :JOIN not enough Parameters\r\n";
@@ -128,6 +144,9 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         message = sanitize_message(message);
         send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
     }
+
+    //in case everything is correct, checking the channels, passwords and everything
+    //with the functionality
     for (std::vector<ChanSecParse>::iterator it = jnde.begin(); it != jnde.end(); it++)
     {
         std::string channel_name = trim_that_last(it->chan);
@@ -408,7 +427,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                             env->channels[channel_name].invited.erase(std::remove(env->channels[channel_name].invited.begin(), env->channels[channel_name].invited.end(), client_socket), env->channels[channel_name].invited.end());
                         }
                     }   
-                    else // limit reached
+                    else
                     {
                         std::cout << "limits has been reached NOT invited  and  there is no  INVITE only restriction " << std::endl;
                         oss << ":" << serverName << " 471 " << nick << " " << channel_name << " :Cannot join channel (+l) - channel is full\r\n";
@@ -420,12 +439,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 }
             }
         }
-        // Send JOIN message (source: server_name, channel: channel_name)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
         join_msg = sanitize_message(join_msg);
         send(client_socket, join_msg.c_str(), join_msg.size(), MSG_NOSIGNAL);
 
-        // Send topic information (RPL_TOPIC and RPL_TOPICWHOTIME)
         if (!env->channels[channel_name].topic.empty())
         {
             std::string topic_msg = ":server_name 332 " + env->clients[client_socket].nickname + " " + channel_name + " :" + env->channels[channel_name].topic + "\n";
@@ -437,11 +454,9 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             send(client_socket, topic_time_msg.c_str(), topic_time_msg.size(), MSG_NOSIGNAL);
         }
 
-        // Send the list of users in the channel (RPL_NAMREPLY and RPL_ENDOFNAMES)
         std::string user_list_msg = ":server_name 353 " + env->clients[client_socket].nickname + " = " + channel_name + " :";
         for (std::vector<int>::iterator it_channel = env->channels[channel_name].clients.begin(); it_channel != env->channels[channel_name].clients.end(); ++it_channel)
         {
-            // prefix '@' for channel operators                                                                                                            // *** CHANGED ***
             bool is_admin = false;                                                                                                                        // *** CHANGED ***
             for (std::vector<int>::iterator it_ad = env->channels[channel_name].admins.begin(); it_ad != env->channels[channel_name].admins.end(); ++it_ad) // *** CHANGED ***
                 if (*it_ad == *it_channel) { is_admin = true; break; }                                                                                    // *** CHANGED ***
@@ -452,12 +467,10 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         user_list_msg = sanitize_message(user_list_msg);
         send(client_socket, user_list_msg.c_str(), user_list_msg.size(), MSG_NOSIGNAL);
 
-        // Send end of names list message
         std::string end_of_names_msg = ":server_name 366 " + env->clients[client_socket].nickname + " " + channel_name + " :End of /NAMES list.\n";
         end_of_names_msg = sanitize_message(end_of_names_msg);
         send(client_socket, end_of_names_msg.c_str(), end_of_names_msg.size(), MSG_NOSIGNAL);
 
-        // Broadcast the new client joining the channel to others in the channel
         if (env->channels[channel_name].clients.size() > 1)
         {
             broadcast_message(env->clients[client_socket].nickname + " has joined the channel: " + channel_name + "\n", channel_name, env);
@@ -467,14 +480,12 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 "!" + env->clients[client_socket].username +
                 "@localhost JOIN :" + channel_name + "\r\n";
 
-            // Send this JOIN line to everyone in the channel except the new user
             for (std::vector<int>::iterator itc = env->channels[channel_name].clients.begin();
                  itc != env->channels[channel_name].clients.end(); ++itc)
             {
                 if (*itc != client_socket)
                     send(*itc, join_broadcast_msg.c_str(), join_broadcast_msg.size(), MSG_NOSIGNAL);
             }
-            // -----------------------------------------------------------
         }
     }
 }
