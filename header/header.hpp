@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 #include <algorithm>
 #include <csignal>
+#include <ctime>
 
 // struct privmsg
 // {
@@ -38,6 +39,7 @@ struct Channel
     std::vector<int>    admins;
     std::vector<int>    invited;
     std::string         topic;
+    time_t creationTime;
     int IsInviteOnly;
     int IsThereAPass;
     std::string pass;
