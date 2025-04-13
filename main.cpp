@@ -1,6 +1,7 @@
 #include "header/header.hpp"
 
 #define MAX_CLIENTS 100
+bool g_stop = false;
 
 void check_spaces_in_pass(char **av)
 {
@@ -70,15 +71,22 @@ int create_server_socket(int port)
         std::cerr << "Error creating socket." << std::endl;
         exit(1);
     }
-    struct sockaddr_in server_addr;//Defines a structure that holds the server's address information
-    memset(&server_addr, 0, sizeof(server_addr));// Initializes the server_addr structure to zero, ensuring that it doesn't contain any garbage data
-    server_addr.sin_family = AF_INET;//Specifies the address family as IPv4.
-    server_addr.sin_addr.s_addr = INADDR_ANY;//Sets the IP address to INADDR_ANY, which means the server will
-    //accept connections on any available network interface (i.e., it will listen for connections on all local network interfaces).
-    server_addr.sin_port = htons(port);//Sets the server's port number. htons() (host-to-network short)
-    //converts the port number to network byte order, ensuring compatibility across different systems.
 
-    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) //Associates the server socket with a specific address and port
+    // ADD THIS: Allow reusing the address quickly after shutdown
+    int enable = 1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0)
+    {
+        std::cerr << "setsockopt(SO_REUSEADDR) failed." << std::endl;
+        exit(1);
+    }
+
+    sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family      = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port        = htons(port);
+
+    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
         std::cerr << "Error binding socket to port." << std::endl;
         exit(1);
@@ -91,6 +99,7 @@ int create_server_socket(int port)
     }
     return server_socket;
 }
+
 
 void    create_env(char **av, t_environment *env)
 {
@@ -126,10 +135,17 @@ void    lets_do_it(char **av)
     close(env.server_socket);
 }
 
+void handle_sigint(int signum)
+{
+    (void)signum;
+    g_stop = true;
+}
+
 int main(int ac, char **av)
 {
     signal(SIGQUIT, SIG_IGN);
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, handle_sigint);
     if (ac != 3)
     {
         std::cerr << "Usage: " << av[0] << " <port> <password>" << std::endl;

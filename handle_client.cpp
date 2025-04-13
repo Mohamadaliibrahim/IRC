@@ -236,7 +236,6 @@ void    check_which_one_is_flase(const std::string &buffer, t_environment *env, 
 void handle_client(int client_socket, t_environment *env)
 {
     char buffer[1024];
-    static int jnde;                          // <--- FIX (was static and global to all clients)
     memset(buffer, 0, sizeof(buffer));
     ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     trim_start(buffer);
@@ -249,17 +248,15 @@ void handle_client(int client_socket, t_environment *env)
             check_which_one_is_flase(buffer, env, client_socket);
         else if ((strncmp(buffer, "JOIN ", 5) == 0) && (env->clients[client_socket].all_set))
         {
-            jnde = 1;                      // <--- FIX
             ft_join(client_socket, buffer, env);
         }
         else if ((strncmp(buffer, "PRIVMSG ", 8) == 0) && (env->clients[client_socket].all_set))
         {
-            jnde = 0;                      // <--- FIX
+
             ft_private_message(client_socket, buffer, env);
         }
         else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
         {
-            jnde = 0;
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
@@ -267,7 +264,6 @@ void handle_client(int client_socket, t_environment *env)
         }
         else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
         {
-            jnde = 0;
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
@@ -275,15 +271,13 @@ void handle_client(int client_socket, t_environment *env)
         }
         else if ((strncmp(buffer, "KICK ", 5) == 0) && (env->clients[client_socket].all_set))
         {
-            jnde = 0;
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
             kick_func(client_socket,jnde,env);
         }
-        else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set) && jnde != 1) // <--- FIX (jnde instead of static var)
+        else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set)) // <--- FIX (jnde instead of static var)
         {
-            jnde = 0;
             char a = '\0';
             std::string temp = (std::string)buffer;
             std::string jnde = trim_that_last_with_flag(buffer, &a);
@@ -291,7 +285,6 @@ void handle_client(int client_socket, t_environment *env)
         }
         else
         {
-            jnde = 0;
         }
     }
     else if (bytes_received == 0)
