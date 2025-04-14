@@ -19,15 +19,6 @@
 #include <csignal>
 #include <ctime>
 
-// struct privmsg
-// {
-//     std::vector<std::string> channels;
-//     std::vector<std::string> users;
-//     bool    its_channel;
-//     bool    its_user;
-//     std::string message;
-// };
-
 extern int g_s;
 
 struct Channel
@@ -39,7 +30,6 @@ struct Channel
     std::vector<int>    admins;
     std::vector<int>    invited;
     std::string         topic;
-    time_t creationTime;
     int IsInviteOnly;
     int IsThereAPass;
     std::string pass;

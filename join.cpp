@@ -16,7 +16,6 @@ Channel create_channel(std::string channel_name,int clientsocket)
     new_one.pass = "";
     new_one.TopicLock = -1;
     new_one.MembersLimit = -1;
-    new_one.creationTime = time(0);
     return (new_one);
 }
 
@@ -434,7 +433,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             send(client_socket, topic_msg.c_str(), topic_msg.size(), MSG_NOSIGNAL);
 
             std::stringstream topic_time_msg;
-            topic_time_msg << ":server_name 333 " << env->clients[client_socket].nickname << " " << channel_name << " " << env->clients[client_socket].nickname << " " << env->channels[channel_name].creationTime << "\n";
+            topic_time_msg << ":server_name 333 " << env->clients[client_socket].nickname << " " << channel_name << " " << env->clients[client_socket].nickname << "\n";
             std::string topic_time = sanitize_message(topic_time_msg.str());
             send(client_socket, topic_time.c_str(), topic_time.size(), MSG_NOSIGNAL);
         }

@@ -176,8 +176,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         {
           ss << "\nlimit is : "  << ch.MembersLimit; 
         }
-        ss << "\nTOPIC LOCKED: " << (ch.TopicLock == 1 ? "YES\n" : "NO\n")
-           << "Time of creation: " << ch.creationTime << "\n";
+        ss << "\nTOPIC LOCKED: " << (ch.TopicLock == 1 ? "YES\n" : "NO\n");
         std::string msg = sanitize_message(ss.str());
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
         return ;
