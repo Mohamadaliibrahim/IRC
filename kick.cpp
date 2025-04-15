@@ -4,6 +4,7 @@
 static void send_numeric_reply(int client_sd, const std::string &yourNick, const std::string &code, const std::string &arg, const std::string &text)
 {
     std::stringstream ss;
+
     ss << ":server " << code << " " << yourNick;
     if (!arg.empty())
         ss << " " << arg;
@@ -16,7 +17,7 @@ static void send_numeric_reply(int client_sd, const std::string &yourNick, const
 int parse_kick(const std::string &cmd_line, std::string &channel, std::string &nickname, std::string &comment, int client_socket, t_environment *env)
 {
     std::string cmd = cmd_line;
-    int i = 0;
+    int i = 0, start;
 
     //making sure that the command is at least "KICK "
     if (cmd.size() < 5)
@@ -55,7 +56,7 @@ int parse_kick(const std::string &cmd_line, std::string &channel, std::string &n
     }
 
     // 4) Parse channel (must start with '#')
-    int start = i;
+    start = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
     channel = cmd.substr(start, i - start);
@@ -102,14 +103,19 @@ int parse_kick(const std::string &cmd_line, std::string &channel, std::string &n
 
 void kick_func(int client_sd, const std::string &cmd, t_environment *env)
 {
-    std::string channel;
-    std::string comment;
+    std::string channel, comment;
     std::string nick = env->clients[client_sd].nickname;
     std::string user = env->clients[client_sd].username;
     std::string serverName = "my.irc.server";
+    std::string message, targetNick, temp;
+    std::stringstream ss;
+    std::ostringstream oss;
+    bool isInChannel, isAdmin, targetInChannel;
+    size_t targetIndex;
 
     //Parse the command
     int parseResult = parse_kick(cmd, channel, nick, comment, client_sd, env);
+    int target_sd = -1;
     if (parseResult == -1)
         return; // parse_kick already sent numeric errors if needed
 
@@ -126,7 +132,7 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
     Channel &ch = env->channels[channel];
 
     //Check if the kicker (client_sd) is in the channel
-    bool isInChannel = false;
+    isInChannel = false;
     for (size_t i = 0; i < ch.clients.size(); i++)
     {
         if (ch.clients[i] == client_sd)
@@ -148,7 +154,7 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
     //Check if the kicker is superUser or an admin
     if (ch.superUser != client_sd)
     {
-        bool isAdmin = false;
+        isAdmin = false;
         for (size_t i = 0; i < ch.admins.size(); i++)
         {
             if (ch.admins[i] == client_sd)
@@ -172,7 +178,6 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
     std::vector<std::string> nicknames;
     {
         std::stringstream ss(nick);
-        std::string temp;
         while (std::getline(ss, temp, ','))
         {
             if (!temp.empty())
@@ -183,13 +188,12 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
     //For each nickname, do the KICK logic
     for (size_t idx = 0; idx < nicknames.size(); idx++)
     {
-        std::string targetNick = nicknames[idx];
+        targetNick = nicknames[idx];
 
         if (env->clients[client_sd].nickname == targetNick)
         {
-            std::ostringstream oss;
             oss << ":" << serverName << " " << nick << " " << channel << " :KICK you can't kick yourself\r\n";
-            std::string message = oss.str();
+            message = oss.str();
             message = sanitize_message(message);
             send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
             continue ;
@@ -202,7 +206,7 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
         if (targetNick.empty())
             continue;
 
-        int target_sd = -1;
+        target_sd = -1;
         std::map<int, Client>::iterator it;
         for (it = env->clients.begin(); it != env->clients.end(); ++it)
         {
@@ -223,8 +227,8 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
         }
 
         //Check if target user is on the channel
-        bool targetInChannel = false;
-        size_t targetIndex = 0;
+        targetInChannel = false;
+        targetIndex = 0;
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
             if (ch.clients[i] == target_sd)
@@ -273,24 +277,23 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
         }
 
         //Notify everyone about the KICK
-        std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
            << "@localhost KICK " << channel
            << " " << targetNick
            << " :" << (comment.empty() ? "Kicked" : comment) << "\n";
 
-        std::string kickMsg = sanitize_message(ss.str());
+        message = sanitize_message(ss.str());
 
         //Send to remaining users in the channel
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
-            send(ch.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
+            send(ch.clients[i], message.c_str(), message.size(), MSG_NOSIGNAL);
         }
         //send to the kicked user
         if (env->clients.find(target_sd) != env->clients.end())
         {
-            send(target_sd, kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
+            send(target_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
         }
     }
 }

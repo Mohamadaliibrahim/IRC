@@ -5,8 +5,10 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 	std::string serverName = "my.irc.server";
     std::string nick = env->clients[client_socket].nickname;
     std::string user = env->clients[client_socket].username; 
-    std::string host = "localhost"; 
-	int i = 0;
+    std::string host = "localhost";
+	std::ostringstream oss;
+	std::string error;
+	int i = 0, j;
 
 	//making sure that the command is at least "TOPIC "
 	if (strncmp(cmd.c_str(), "TOPIC ", 6) == 0 && isspace(cmd[5]))
@@ -18,9 +20,8 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 		//checking the channel name
 		if (cmd[i] != '#')
 		{
-			std::ostringstream oss;
        		oss << ":" << serverName << " 403 " << nick << " :Topic :Channel name must start with a #\r\n";
-			std::string error = oss.str();
+			error = oss.str();
             error = sanitize_message(error);
             send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
 			return -1;
@@ -29,7 +30,7 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 		{
 
 			//parsing the channel name
-			int j = 0;
+			j = 0;
 			while (!isspace(cmd[i + j]) && cmd[i + j] != '\0')
 				j++;
 			chan = cmd.substr(i, j);
@@ -44,9 +45,8 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 					i++;
 				if (cmd[i] != ':')
 				{
-					std::ostringstream oss;
        				oss << ":" << serverName << " 461 " << nick << " :TOPIC :Not enough parameters\r\n";
-					std::string error = oss.str();
+					error = oss.str();
 					error = sanitize_message(error);
 					send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
 					return -1;
@@ -68,22 +68,22 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 
 void	topic_func(int client_sd, std::string cmd, t_environment *env)
 {
-	std::string chan, top, message;
+	std::string chan, top, message, error;
 	std::string serverName = "my.irc.server";
     std::string nick = env->clients[client_sd].nickname;
     std::string user = env->clients[client_sd].username; 
-    std::string host = "localhost"; 
+    std::string host = "localhost";
+	std::ostringstream oss;
 	int cf = 0;
 	int res = parse_topic(cmd, chan, top, client_sd, env);
+
 	if (res == 2)
 	{
-		
 		if (env->channels.find(chan) != env->channels.end())
 		{
 			if (env->channels[chan].superUser == client_sd)
 			{
 				// af = 1;
-				std::ostringstream oss;
 				oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
 				message = oss.str();
 				env->channels[chan].topic = top;
@@ -97,13 +97,11 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 				{
 					if (env->channels[chan].TopicLock == 1)
 					{
-						std::ostringstream oss;
 						for (int i = 0; i < (int)env->channels[chan].admins.size(); i++)
 						{
 							if (env->channels[chan].admins[i] == client_sd)
 							{
 								// af = 1;
-
 								oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
 								env->channels[chan].topic = top;
 								message = oss.str();
@@ -119,7 +117,6 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 						return ;
 					}
 					cf = 1;
-					std::ostringstream oss;
 					oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
 					env->channels[chan].topic = top;
 					message = oss.str();
@@ -129,18 +126,16 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 			}
 			if (cf == 0)
 			{
-				std::ostringstream oss;
        			oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
-				std::string error = oss.str();
+				error = oss.str();
 				error = sanitize_message(error);
 				send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 			}
 		}
 		else
 		{
-			std::ostringstream oss;
        		oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
-			std::string error = oss.str();
+			error = oss.str();
 			error = sanitize_message(error);
 			send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 		}
@@ -154,7 +149,6 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
                 if (env->channels[chan].clients[i] == client_sd)
                 {
                     cf = 1;
-                    std::ostringstream oss;
                     if (env->channels[chan].topic.empty())
                         oss << ":" << serverName << " 331 " << nick << " :No topic is set " <<"\r\n"; 
                     else
@@ -166,18 +160,16 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
             }
             if (cf == 0)
             {
-                std::ostringstream oss;
                 oss << ":" << serverName << " 442 " << nick << " :You are not in that channel\r\n";
-                std::string error = oss.str();
+                error = oss.str();
                 error = sanitize_message(error);
                 send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
             }
         }
         else
         {
-            std::ostringstream oss;
             oss << ":" << serverName << " 403 " << nick << " :Channel name must start with a #\r\n";
-            std::string error = oss.str();
+            error = oss.str();
             error = sanitize_message(error);
             send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         }

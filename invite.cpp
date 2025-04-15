@@ -7,7 +7,10 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
     std::string user = env->clients[client_socket].username; 
     std::string host = "localhost"; 
     std::string cmd = cmd_line;
-    int i = 0;
+    std::ostringstream oss;
+    std::string error;
+    int i = 0, j;
+
     //makes sure that the command is at least "INVITE "(7 charachters)
     if (cmd.size() < 7)
         return -1;
@@ -24,10 +27,10 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
         return -1;
 
     //parsing the nickname of the invited user
-    int s = i;
+    j = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
-    nickname = cmd.substr(s, i - s);
+    nickname = cmd.substr(j, i - j);
     while (i < (int)cmd.size() && isspace(cmd[i]))
         i++;
     if (i >= (int)cmd.size())
@@ -38,15 +41,14 @@ int parse_invite(const std::string &cmd_line, std::string &nickname, std::string
         i++;
 
     //parsing the channel name with its validation
-    s = i;
+    j = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
-    channel = cmd.substr(s, i - s);
+    channel = cmd.substr(j, i - j);
     if (channel.empty() || channel[0] != '#')
     {
-        std::ostringstream oss;
        	oss << ":" << serverName << " 403 " << nick << " :INVITE :Channel name must start with a #\r\n";
-        std::string error = oss.str();
+        error = oss.str();
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return -1;
@@ -58,9 +60,10 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     std::string serverName = "my.irc.server";
     std::string user = env->clients[client_sd].username; 
     std::string host = "localhost"; 
-    std::string nick;
-    std::string chan;
-    int af = 0;//admin flag
+    std::string nick, chan, error;
+    std::ostringstream oss;
+    std::stringstream ss;
+    int af = 0, cf = 0, t_sd, in_chan;
 
     //filling the nickname of the invited user and the channel invited
     //to with syntax validation
@@ -71,15 +74,12 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     //making sure that the channel exist
     if (env->channels.find(chan) == env->channels.end())
     {
-        std::ostringstream oss;
         oss << ":" << serverName << " 403 " << nick << " :INVITE :No such channel " << chan << "\r\n";
-        std::string error  = oss.str();
+        error  = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
-
-    int cf = 0;// client flag
 
     //makning sure that the user inviting is a client in the channel
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
@@ -92,15 +92,14 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (!cf)
     {
-        std::ostringstream oss;
         oss << ":" << serverName << " 442 " << nick << " :INVITE :You're not on that channel\r\n";
-        std::string error = oss.str();
+        error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
 
-    int t_sd = -1;//fthe invited user descriptor
+    t_sd = -1;//fthe invited user descriptor
 
     //getting the descriptor of the invited user with validation
     for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); it++)
@@ -113,16 +112,15 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (t_sd == -1)
     {
-        std::ostringstream oss;
         oss << ":" << serverName << " 401 " << nick << " :INVITE :No such nickname\r\n";
-        std::string error = oss.str();
+        error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
 
     //testing if the invited user is already in teh channel invited to
-    int in_chan = 0;
+    in_chan = 0;
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
     {
         if (env->channels[chan].clients[i] == t_sd)
@@ -133,9 +131,8 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (in_chan)
     {
-        std::ostringstream oss;
         oss << ":" << serverName << " 443 " << nick << " :INVITE :Is already  on that channel\r\n";
-        std::string error = oss.str();
+        error = oss.str();
         error = sanitize_message(error);
         send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
@@ -150,37 +147,34 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
 			if (env->channels[chan].admins[i] == client_sd)
 				af = 1;
 		}
-        std::ostringstream oss;
 		if (af == 1)
         {
             oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n";
             env->channels[chan].invited.push_back(t_sd);
-            std::string msg = sanitize_message(oss.str());
-            send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            error = sanitize_message(oss.str());
+            send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
             
         }
         else 
         {
             oss << ":" << serverName << " 482 " << nick << " :INVITE :Invite Failed, You're not channel operator" << "\r\n";
-            std::string msg = sanitize_message(oss.str());
-            send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            error = sanitize_message(oss.str());
+            send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
             return;    
         }
     }
     else  if (cf && env->channels[chan].IsInviteOnly == -1)
     {
-        std::ostringstream oss;
         oss << ":" << serverName << " 341 " << nick << " :INVITE :Sent successfully\r\n"; 
         env->channels[chan].invited.push_back(t_sd);
-        std::string msg = sanitize_message(oss.str());
-        send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        error = sanitize_message(oss.str());
+        send(client_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
     }
-    std::stringstream ss;
-        ss << ":" << env->clients[client_sd].nickname
-           << "!" << env->clients[client_sd].username
-           << "@localhost"         // <-- Always use "localhost"
-           << " INVITE " << nick
-           << " :" << chan << "\n";
-        std::string msg = sanitize_message(ss.str());
-        send(t_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+    ss << ":" << env->clients[client_sd].nickname
+       << "!" << env->clients[client_sd].username
+       << "@localhost"         // <-- Always use "localhost"
+       << " INVITE " << nick
+       << " :" << chan << "\n";
+    error = sanitize_message(ss.str());
+    send(t_sd, error.c_str(), error.size(), MSG_NOSIGNAL);
 }

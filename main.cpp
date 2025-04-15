@@ -19,6 +19,8 @@ void check_spaces_in_pass(char **av)
 
 void    check_av(char **av)
 {
+    int port;
+
     for (int i = 0; av[1][i] != '\0'; ++i)
     {
         if (!std::isdigit(av[1][i]))
@@ -27,7 +29,7 @@ void    check_av(char **av)
             exit(1);
         }
     }
-    int port = std::atoi(av[1]);
+    port = std::atoi(av[1]);
     if ((port < 1 || port > 65535) || (port >= 1 && port <= 1023))
     {
         std::cerr << "Invalid port!" << std::endl;
@@ -39,6 +41,7 @@ void    check_av(char **av)
 std::string sanitize_message(const std::string &msg)
 {
     std::string result;
+
     for (size_t i = 0; i < msg.size(); i++)
     {
         if ((msg[i] >= 32 && msg[i] <= 126) || msg[i] == '\n')
@@ -53,6 +56,7 @@ std::string sanitize_message(const std::string &msg)
 void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env)
 {
     std::map<std::string, Channel>::iterator it = env->channels.find(channel_name);
+
     if (it == env->channels.end())
         return;
     std::vector<int> &members = it->second.clients;
@@ -66,6 +70,9 @@ void broadcast_message(const std::string &message, const std::string &channel_na
 int create_server_socket(int port)
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    int enable;
+    sockaddr_in server_addr;
+
     if (server_socket == -1)
     {
         std::cerr << "Error creating socket." << std::endl;
@@ -73,14 +80,13 @@ int create_server_socket(int port)
     }
 
     // ADD THIS: Allow reusing the address quickly after shutdown
-    int enable = 1;
+    enable = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0)
     {
         std::cerr << "setsockopt(SO_REUSEADDR) failed." << std::endl;
         exit(1);
     }
 
-    sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family      = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -112,6 +118,7 @@ void    create_env(char **av, t_environment *env)
 void set_non_blocking(int sockfd)
 {
     int flags = fcntl(sockfd, F_GETFL, 0);
+
     if (flags == -1)
     {
         std::cerr << "Error getting socket flags." << std::endl;
