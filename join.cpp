@@ -181,7 +181,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].clients.push_back(client_socket);
             nf = 1;
         }
-        std::cout << (int)env->channels[channel_name].IsInviteOnly << std::endl;
         if (nf == 1)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser

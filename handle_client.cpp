@@ -216,10 +216,6 @@ void do_buffer(int client_socket, t_environment *env, const std::string &buffer)
     {
         *it = trim_that_first(*it);
         a = split_on_space(*it, ' ');
-        for (unsigned long i = 0; i < a.size(); i++)
-        {
-            std::cout<< a[i] <<std::endl;
-        }
         if (a[0] == "PASS" && !env->clients[client_socket].pass_flag)
         {
             ft_pass(*it, &env, client_socket);
