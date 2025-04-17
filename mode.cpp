@@ -3,7 +3,6 @@
 static void send_numeric_reply(int client_sd, const std::string &yourNick, const std::string &code, const std::string &arg, const std::string &text)
 {
     std::stringstream ss;
-
     ss << ":server " << code << " " << yourNick;
     if (!arg.empty())
         ss << " " << arg;
@@ -16,8 +15,7 @@ static void send_numeric_reply(int client_sd, const std::string &yourNick, const
 int parse_mode(const std::string &cmd_line, std::string &channel, std::string &modes, std::vector<std::string> &modeParams, int client_socket, t_environment *env)
 {
     std::string cmd = cmd_line;
-    int i = 0, start, paramStart;
-    std::string param;
+    int i = 0;
 
     //making sure that the command is at least "MODE "
     if (cmd.size() < 5)
@@ -52,7 +50,7 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
                            "Not enough parameters");
         return -1;
     }
-    start = i;
+    int start = i;
     while (i < (int)cmd.size() && !isspace(cmd[i]))
         i++;
     channel = cmd.substr(start, i - start);
@@ -82,10 +80,10 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
         while (i < (int)cmd.size() && cmd[i] == ':')
             i++;
 
-        paramStart = i;
+        int paramStart = i;
         while (i < (int)cmd.size() && !isspace(cmd[i]))
             i++;
-        param = cmd.substr(paramStart, i - paramStart);
+        std::string param = cmd.substr(paramStart, i - paramStart);
         if (!param.empty())
             modeParams.push_back(param);
 
@@ -120,15 +118,14 @@ int parse_mode(const std::string &cmd_line, std::string &channel, std::string &m
 
 void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 {
-    std::string channel, modes, msg, appliedModes, targetNick;
-    std::stringstream ss;
+    std::string channel;
+    std::string modes;
     std::vector<std::string> modeParams;
     int parseResult = parse_mode(cmd, channel, modes, modeParams, client_sd, env);
-    bool isInChannel, isOperator, alreadyAdmin, targetOnChannel;
-    size_t paramIndex;
-    char sign, c;
-    int limitVal, target_sd;
-
+    std::cout << "\n\n the modes param are" << std::endl;
+    for (int i = 0; i < (int)modeParams.size(); i++)
+        std::cout << modeParams[i]<< std::endl;
+    std::cout << "the modes param end here" << std::endl;
     if (parseResult == -1)
         return;
 
@@ -146,7 +143,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     Channel &ch = env->channels[channel];
 
     // 3) Check if user is in channel
-    isInChannel = false;
+    bool isInChannel = false;
     for (size_t i = 0; i < env->channels[channel].clients.size(); i++)
     {
         if (env->channels[channel].clients[i] == client_sd)
@@ -167,6 +164,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (parseResult == -10)
     {
+        std::string str;
+        std::stringstream ss;
         ss << "Invite mode: "  <<(ch.IsInviteOnly == 1 ? "+i" : "-i")
         << "\nKey mode: " << (ch.IsThereAPass == 1 ? "+k" : "-k");
         if (ch.MembersLimit == -1)
@@ -178,12 +177,12 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
           ss << "\nlimit is : "  << ch.MembersLimit; 
         }
         ss << "\nTOPIC LOCKED: " << (ch.TopicLock == 1 ? "YES\n" : "NO\n");
-        msg = sanitize_message(ss.str());
+        std::string msg = sanitize_message(ss.str());
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
         return ;
     }
     // 4) Check if user is superUser or admin (operator privileges)
-    isOperator = false;
+    bool isOperator = false;
     if (env->channels[channel].superUser == client_sd)
         isOperator = true;
     else
@@ -210,12 +209,13 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
 
     // We'll parse each character in `modes`. sign will be '+' or '-'.
     // We'll track which modes actually got applied in a final string for broadcast.
-    paramIndex = 0;
-    sign = '\0';
+    std::string appliedModes;
+    size_t paramIndex = 0;
+    char sign = '\0';
 
     for (size_t m = 0; m < modes.size(); m++)
     {
-        c = modes[m];
+        char c = modes[m];
 
         // If we see '+' or '-', that's the new sign
         if (c == '+' || c == '-')
@@ -236,6 +236,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                "is unknown mode char");
             continue;
         }
+
+        std::cout << sign << c << "\n";
 
         switch (c)
         {
@@ -311,7 +313,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                            "Not enough parameters for +l");
                         break;
                     }
-                    limitVal = atoi(modeParams[paramIndex++].c_str());
+                    int limitVal = atoi(modeParams[paramIndex++].c_str());
                     if (limitVal < 0 && limitVal != -1)
                         send_numeric_reply(client_sd,
                                             env->clients[client_sd].nickname,
@@ -347,10 +349,10 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "Not enough parameters for +o/-o");
                     break;
                 }
-                targetNick = modeParams[paramIndex++];
+                std::string targetNick = modeParams[paramIndex++];
             
                 /* 1) locate the target socket */
-                target_sd = -1;
+                int target_sd = -1;
                 for (std::map<int, Client>::iterator it = env->clients.begin();
                      it != env->clients.end(); ++it)
                 {
@@ -371,7 +373,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 }
             
                 /* 2) make sure the target is on the channel */
-                targetOnChannel = false;
+                bool targetOnChannel = false;
                 for (size_t i = 0; i < ch.clients.size(); ++i)
                 {
                     if (ch.clients[i] == target_sd)
@@ -393,7 +395,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 /* 3) handle +o */
                 if (sign == '+')
                 {
-                    alreadyAdmin = false;
+                    bool alreadyAdmin = false;
                     for (size_t i = 0; i < ch.admins.size(); ++i)
                     {
                         if (ch.admins[i] == target_sd)
@@ -468,6 +470,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     // 5) Broadcast the final mode change to the channel
     {
         // Build the mode line to broadcast
+        std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
            << "@localhost MODE " << channel << " " << appliedModes << " ";
@@ -478,12 +481,12 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
             ss << modeParams[p] << " ";
         ss << "\n";
 
-        msg = sanitize_message(ss.str());
+        std::string modeMsg = sanitize_message(ss.str());
 
         // Send to everyone in the channel
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
-            send(ch.clients[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            send(ch.clients[i], modeMsg.c_str(), modeMsg.size(), MSG_NOSIGNAL);
         }
     }
 }

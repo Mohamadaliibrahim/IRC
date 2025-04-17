@@ -13,17 +13,16 @@ std::string trim_that_last_with_flag(const std::string& str, char *x)
 void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::vector<std::string> a = split_on_space(buffer, ' ');
-    std::string error;
     if (a.size() != 2)
     {
-        error = "Invalid PASS command format.\n";
+        std::string error = "Invalid PASS command format.\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].pass_flag)
     {
-        error = "PASS already set!\n";
+        std::string error = "PASS already set!\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
@@ -31,7 +30,7 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
     if (a.size() > 1 && a[1] == (*env)->pass)
     {
         (*env)->clients[client_socket].authenticated = true;
-        error = "Password accepted.\n";
+        std::string error = "Password accepted.\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         std::cout << "Client authenticated successfully." << std::endl;
@@ -39,7 +38,7 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
     }
     else
     {
-        error = "Incorrect password.\n";
+        std::string error = "Incorrect password.\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         std::cout << "Client failed to authenticate." << std::endl;
@@ -49,18 +48,16 @@ void ft_pass(const std::string &buffer, t_environment **env, int client_socket)
 void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::vector<std::string> a = split_on_space(buffer, ' ');
-    std::string error;
-
     if (a.size() != 2)
     {
-        error = "Invalid NICK command format.\n";
+        std::string error = "Invalid NICK command format.\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].nick_flag)
     {
-        error = "NICK already set!\n";
+        std::string error = "NICK already set!\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
@@ -69,22 +66,22 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
     {
         if (ip->second.nickname == a[1])
         {
-            error = "Nickname already taken.\n";
-            error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
+            std::string error_msg = "Nickname already taken.\n";
+            error_msg = sanitize_message(error_msg);
+            send(client_socket, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
             std::cout << "Nickname " << a[1] << " is already in use." << std::endl;
             return;
         }
     }
     if (a[1][0] == '#')
     {
-        error = "NICK name should not start with #\n";
+        std::string error = "NICK name should not start with #\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     (*env)->clients[client_socket].nickname = a[1];
-    error = "Nickname accepted.\n";
+    std::string error = "Nickname accepted.\n";
     error = sanitize_message(error);
     send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
     std::cout << "Client's nickname set to: " << a[1] << std::endl;
@@ -94,18 +91,16 @@ void ft_nick(const std::string &buffer, t_environment **env, int client_socket)
 void ft_user(const std::string &buffer, t_environment **env, int client_socket)
 {
     std::vector<std::string> a = split_on_space(buffer, ' ');
-    std::string error;
-
     if (a.size() != 5)
     {
-        error = "Invalid USER command format.\n";
+        std::string error = "Invalid USER command format.\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
     }
     if ((*env)->clients[client_socket].user_flag)
     {
-        error = "USER already set!\n";
+        std::string error = "USER already set!\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         return;
@@ -114,9 +109,9 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
     {
         if (ip->second.username == a[1])
         {
-            error = "Username already taken.\n";
-            error = sanitize_message(error);
-            send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
+            std::string error_msg = "Username already taken.\n";
+            error_msg = sanitize_message(error_msg);
+            send(client_socket, error_msg.c_str(), error_msg.size(), MSG_NOSIGNAL);
             std::cout << "Username " << a[1] << " is already in use." << std::endl;
             return;
         }
@@ -127,14 +122,14 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
         if (a[2] == "0" && a[3] == "*" && a[4][0] == ':')
         {
             (*env)->clients[client_socket].realname = a[4].substr(1);
-            error =  "Username accepted.\nRealname accepted\n";
+            std::string error =  "Username accepted.\nRealname accepted\n";
             error = sanitize_message(error);
             send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         }
         else
         {
             (*env)->clients[client_socket].realname = "NONE";
-            error = "Username accepted.\nRealname not accepted\n";
+            std::string error = "Username accepted.\nRealname not accepted\n";
             error = sanitize_message(error);
             send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
         }
@@ -142,7 +137,7 @@ void ft_user(const std::string &buffer, t_environment **env, int client_socket)
     else
     {
         (*env)->clients[client_socket].realname = "NONE";
-        error = "Username accepted.\nRealname not provided\n";
+        std::string error = "Username accepted.\nRealname not provided\n";
         error = sanitize_message(error);
         send(client_socket, error.c_str(), error.size(), MSG_NOSIGNAL);
     }
@@ -156,7 +151,6 @@ std::vector<std::string> split_on_backspash_n(const std::string &str)
     std::vector<std::string> result;
     std::string word;
     std::istringstream stream(str);
-
     while (std::getline(stream, word))
     {
         word.erase(std::remove(word.begin(), word.end(), '\r'), word.end());
@@ -172,7 +166,6 @@ std::vector<std::string> split_on_space(const std::string &str, char delimiter)
     std::vector<std::string> result;
     std::string word;
     std::istringstream stream(str);
-
     while (std::getline(stream, word, delimiter))
     {
         if (!word.empty())
@@ -183,13 +176,12 @@ std::vector<std::string> split_on_space(const std::string &str, char delimiter)
 
 void trim_start(char* buffer)
 {
-    size_t start = 0, length;
-
+    size_t start = 0;
     while (buffer[start] == ' ' || buffer[start] == '\t' || buffer[start] == '\r' || buffer[start] == '\n')
     {
         start++;
     }
-    length = strlen(buffer);
+    size_t length = strlen(buffer);
     for (size_t i = 0; i < length - start; ++i)
     {
         buffer[i] = buffer[start + i];
@@ -200,7 +192,6 @@ void trim_start(char* buffer)
 std::string trim_that_first(const std::string& str)
 {
     size_t start = str.find_first_not_of(" \t\r\n");
-
     if (start == std::string::npos)
         return "";
     return str.substr(start);
@@ -210,12 +201,14 @@ void do_buffer(int client_socket, t_environment *env, const std::string &buffer)
 {
     std::vector<std::string> x = split_on_backspash_n(buffer);
     std::vector<std::string>::iterator it = x.begin();
-    std::vector<std::string> a;
-
     while (it != x.end())
     {
         *it = trim_that_first(*it);
-        a = split_on_space(*it, ' ');
+        std::vector<std::string> a = split_on_space(*it, ' ');
+        // for (unsigned long i = 0; i < a.size(); i++)
+        // {
+        //     std::cout<< a[i] <<std::endl;
+        // }
         if (a[0] == "PASS" && !env->clients[client_socket].pass_flag)
         {
             ft_pass(*it, &env, client_socket);
@@ -242,15 +235,8 @@ void    check_which_one_is_flase(const std::string &buffer, t_environment *env, 
 void handle_client(int client_socket, t_environment *env)
 {
     char buffer[1024];
-    char a;
-    bool isInChannel;
-    int leaving_socket;
-    ssize_t bytes_received;
-    std::string kickMsg, leaving_nick, leaving_user,jnde, temp;
-    std::stringstream ss;
-
     memset(buffer, 0, sizeof(buffer));
-    bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+    ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     trim_start(buffer);
     if (bytes_received > 0)
     {
@@ -269,45 +255,48 @@ void handle_client(int client_socket, t_environment *env)
         }
         else if ((strncmp(buffer, "TOPIC ", 6) == 0) && (env->clients[client_socket].all_set))
         {
-            a = '\0';
-            temp = (std::string)buffer;
-            jnde = trim_that_last_with_flag(buffer, &a);
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
             topic_func(client_socket,jnde,env);
         }
         else if ((strncmp(buffer, "INVITE ", 7) == 0) && (env->clients[client_socket].all_set))
         {
-            a = '\0';
-            temp = (std::string)buffer;
-            jnde = trim_that_last_with_flag(buffer, &a);
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
             invite_func(client_socket,jnde,env);
         }
         else if ((strncmp(buffer, "KICK ", 5) == 0) && (env->clients[client_socket].all_set))
         {
-            a = '\0';
-            temp = (std::string)buffer;
-            jnde = trim_that_last_with_flag(buffer, &a);
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
             kick_func(client_socket,jnde,env);
         }
         else if ((strncmp(buffer, "MODE ", 5) == 0) && (env->clients[client_socket].all_set)) // <--- FIX (jnde instead of static var)
         {
-             a = '\0';
-            temp = (std::string)buffer;
-            jnde = trim_that_last_with_flag(buffer, &a);
+            char a = '\0';
+            std::string temp = (std::string)buffer;
+            std::string jnde = trim_that_last_with_flag(buffer, &a);
             mode_func(client_socket,jnde,env);
+        }
+        else
+        {
         }
     }
     else if (bytes_received == 0)
     {
         std::cout << "Client disconnected." << std::endl;
 
-        leaving_socket = client_socket;
-        leaving_nick = env->clients[leaving_socket].nickname;
-        leaving_user = env->clients[leaving_socket].username;
+        int leaving_socket = client_socket;
+        std::string leaving_nick = env->clients[leaving_socket].nickname;
+        std::string leaving_user = env->clients[leaving_socket].username;
         for (std::map<std::string, Channel>::iterator it = env->channels.begin();
              it != env->channels.end(); )
         {
             Channel &chan = it->second;
-            isInChannel = false;
+            bool isInChannel = false;
             for (size_t i = 0; i < chan.clients.size(); i++)
             {
                 if (chan.clients[i] == client_socket)
@@ -322,13 +311,15 @@ void handle_client(int client_socket, t_environment *env)
             }
             else 
             {
+                std::cout << "here\n";
+                std::stringstream ss;
                 ss << ":" << leaving_nick
                    << "!" << leaving_user
                    << "@localhost KICK " << chan.name
                    << " " << leaving_nick
                    << ": left the channel" << std::endl; 
                 
-                kickMsg = sanitize_message(ss.str());
+                std::string kickMsg = sanitize_message(ss.str());
                 chan.clients.erase(std::remove(chan.clients.begin(), chan.clients.end(), leaving_socket), chan.clients.end());
                 chan.normalUsers.erase(std::remove(chan.normalUsers.begin(), chan.normalUsers.end(), leaving_socket), chan.normalUsers.end()); // <--- FIX (was commented)
                 chan.admins.erase(std::remove(chan.admins.begin(), chan.admins.end(), leaving_socket), chan.admins.end());
@@ -362,6 +353,7 @@ void handle_client(int client_socket, t_environment *env)
                                   << " is " << env->clients[chan.superUser].nickname << std::endl;
                     }
                 }
+
                 // delete empty channels
                 if (chan.clients.empty() && chan.normalUsers.empty() && chan.admins.empty())
                 {

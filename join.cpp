@@ -35,8 +35,10 @@ std::string trim_that_last(const std::string& str)
 int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
 {
     ChanSecParse tmp;
-    std::vector<std::string> chans, passs;
-    int i = 0, chanf = 0, j;
+    std::vector<std::string> chans;
+    std::vector<std::string> passs;
+    int i = 0;
+    int chanf = 0;//channel flag
 
     //making sure that the command is "JOIN " at least
     if (strncmp(cmd.c_str(), "JOIN ", 5) != 0)
@@ -50,9 +52,9 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
     {
         if (chanf == 0 && cmd[i] != '#')
         {
-            return -3;
+            return -4;
         }
-        j = i;
+        int j = i;
         while (!isspace(cmd[j]) && cmd[j] != '\0' && cmd[j] != ',')
             j++;
         if (chanf == 0)
@@ -88,7 +90,7 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
         //number of channels given is the same as the nm of channels
         if (passs.size() != chans.size())
         {
-            return -5;
+            return -2;
         }
         for (int i = 0; i < (int)chans.size(); i++)
         {
@@ -102,18 +104,17 @@ int parse_join(const std::string &cmd, std::vector<ChanSecParse> &parseData)
 
 void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 {
-    int nf = 0, invitedf = 0, cf = 0;;//new flag and invited user flag
+    int nf = 0, invitedf = 0;//new flag and invited user flag
     std::vector<ChanSecParse> jnde;
     int res = parse_join(buffer, jnde);//getting the result from the parse function
     std::string nick = env->clients[client_socket].nickname;
     std::string user = env->clients[client_socket].username;
     std::string serverName = "my.irc.server";
     std::ostringstream oss;
-    std::string message, given_pass, channel_name;
-    bool already_in_channel, is_admin;
+    std::string message;
 
     //in case there is a bas channel given
-    if (res == -3)
+    if (res == -3 || res == -4)
     {
         oss << ":" << serverName << " 476 " << nick << " :JOIN :Bad Channel Mask\r\n";
         message = oss.str();
@@ -123,7 +124,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
     }
 
     //in case not enough parameters are given
-    if (res == -5)
+    if (res == -5 || res == -2)
     {
         oss << ":" << serverName << " 461 " << nick << " :JOIN not enough Parameters\r\n";
         message = oss.str();
@@ -135,13 +136,13 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
     //with the functionality
     for (std::vector<ChanSecParse>::iterator it = jnde.begin(); it != jnde.end(); it++)
     {
-        channel_name = trim_that_last(it->chan);
-        given_pass = it->pass;
+        std::string channel_name = trim_that_last(it->chan);
+        std::string given_pass = it->pass;
         
         channel_name = trim_that_first(channel_name);
         channel_name = trim_that_last(channel_name);
 
-        already_in_channel = false;
+        bool already_in_channel = false;
         
         for (std::vector<int>::iterator it_channel = env->channels[channel_name].clients.begin(); 
              it_channel != env->channels[channel_name].clients.end(); ++it_channel)
@@ -155,12 +156,14 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
 
         if (already_in_channel)
         {
-            message = "You are already in " + channel_name + " channel.\n";
-            message = sanitize_message(message);
-            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+            std::string already_in_channel_msg = "You are already in " + channel_name + " channel.\n";
+            already_in_channel_msg = sanitize_message(already_in_channel_msg);
+            send(client_socket, already_in_channel_msg.c_str(), already_in_channel_msg.size(), MSG_NOSIGNAL);
             continue;
         }
-        cf = 0;
+
+        int cf = 0;
+
         for (std::map<std::string, Channel>::iterator it = env->channels.begin(); it != env->channels.end(); ++it)
         {
             if (it->second.name == channel_name)
@@ -174,6 +177,12 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         {
             env->channels[channel_name] = create_channel(channel_name,client_socket);
         }
+
+        // for (std::map<std::string, Channel>::iterator it = env->channels.begin(); it != env->channels.end(); it++)
+        // {
+        //     if ()
+        // }
+
         
         // Add the client to the channel
         if ((int)env->channels[channel_name].clients.size() == 0)
@@ -181,14 +190,15 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].clients.push_back(client_socket);
             nf = 1;
         }
+        std::cout << (int)env->channels[channel_name].IsInviteOnly << std::endl;
         if (nf == 1)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
             env->channels[channel_name].admins.push_back(client_socket);// add the superuser to the admin list
             // send MODE +o to channel creator and all present users
-            message = ":" + env->clients[client_socket].nickname + "!" + env->clients[client_socket].username + "@localhost MODE " + channel_name + " +o " + env->clients[client_socket].nickname + "\r\n"; // *** CHANGED ***
+            std::string mode_msg = ":" + env->clients[client_socket].nickname + "!" + env->clients[client_socket].username + "@localhost MODE " + channel_name + " +o " + env->clients[client_socket].nickname + "\r\n"; // *** CHANGED ***
             for (std::vector<int>::iterator itc = env->channels[channel_name].clients.begin(); itc != env->channels[channel_name].clients.end(); ++itc)                                           // *** CHANGED ***
-                send(*itc, message.c_str(), message.size(), MSG_NOSIGNAL);                                                                                                                   // *** CHANGED ***
+                send(*itc, mode_msg.c_str(), mode_msg.size(), MSG_NOSIGNAL);                                                                                                                   // *** CHANGED ***
         }
         else if  (env->channels[channel_name].IsInviteOnly == 1) // is invited only
         {
@@ -412,44 +422,44 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                 }
             }
         }
-        message = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
-        message = sanitize_message(message);
-        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+        std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
+        join_msg = sanitize_message(join_msg);
+        send(client_socket, join_msg.c_str(), join_msg.size(), MSG_NOSIGNAL);
 
         if (!env->channels[channel_name].topic.empty())
         {
-            message = ":server_name 332 " + env->clients[client_socket].nickname + " " + channel_name + " :" + env->channels[channel_name].topic + "\n";
-            message = sanitize_message(message);
-            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+            std::string topic_msg = ":server_name 332 " + env->clients[client_socket].nickname + " " + channel_name + " :" + env->channels[channel_name].topic + "\n";
+            topic_msg = sanitize_message(topic_msg);
+            send(client_socket, topic_msg.c_str(), topic_msg.size(), MSG_NOSIGNAL);
 
             std::stringstream topic_time_msg;
             topic_time_msg << ":server_name 333 " << env->clients[client_socket].nickname << " " << channel_name << " " << env->clients[client_socket].nickname << "\n";
-            message = sanitize_message(topic_time_msg.str());
-            send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+            std::string topic_time = sanitize_message(topic_time_msg.str());
+            send(client_socket, topic_time.c_str(), topic_time.size(), MSG_NOSIGNAL);
         }
 
-        message = ":server_name 353 " + env->clients[client_socket].nickname + " = " + channel_name + " :";
+        std::string user_list_msg = ":server_name 353 " + env->clients[client_socket].nickname + " = " + channel_name + " :";
         for (std::vector<int>::iterator it_channel = env->channels[channel_name].clients.begin(); it_channel != env->channels[channel_name].clients.end(); ++it_channel)
         {
-            is_admin = false;                                                                                                                        // *** CHANGED ***
+            bool is_admin = false;                                                                                                                        // *** CHANGED ***
             for (std::vector<int>::iterator it_ad = env->channels[channel_name].admins.begin(); it_ad != env->channels[channel_name].admins.end(); ++it_ad) // *** CHANGED ***
                 if (*it_ad == *it_channel) { is_admin = true; break; }                                                                                    // *** CHANGED ***
             std::string prefix = is_admin ? "@" : "";                                                                                                     // *** CHANGED ***
-            message += prefix + env->clients[*it_channel].nickname + " ";                                                                           // *** CHANGED ***
+            user_list_msg += prefix + env->clients[*it_channel].nickname + " ";                                                                           // *** CHANGED ***
         }
-        message += "\n";
-        message = sanitize_message(message);
-        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+        user_list_msg += "\n";
+        user_list_msg = sanitize_message(user_list_msg);
+        send(client_socket, user_list_msg.c_str(), user_list_msg.size(), MSG_NOSIGNAL);
 
-        message = ":server_name 366 " + env->clients[client_socket].nickname + " " + channel_name + " :End of /NAMES list.\n";
-        message = sanitize_message(message);
-        send(client_socket, message.c_str(), message.size(), MSG_NOSIGNAL);
+        std::string end_of_names_msg = ":server_name 366 " + env->clients[client_socket].nickname + " " + channel_name + " :End of /NAMES list.\n";
+        end_of_names_msg = sanitize_message(end_of_names_msg);
+        send(client_socket, end_of_names_msg.c_str(), end_of_names_msg.size(), MSG_NOSIGNAL);
 
         if (env->channels[channel_name].clients.size() > 1)
         {
             broadcast_message(env->clients[client_socket].nickname + " has joined the channel: " + channel_name + "\n", channel_name, env);
             // -------------- ADDED RFC-STYLE JOIN BROADCAST --------------
-            message = 
+            std::string join_broadcast_msg = 
                 ":" + env->clients[client_socket].nickname +
                 "!" + env->clients[client_socket].username +
                 "@localhost JOIN :" + channel_name + "\r\n";
@@ -458,7 +468,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
                  itc != env->channels[channel_name].clients.end(); ++itc)
             {
                 if (*itc != client_socket)
-                    send(*itc, message.c_str(), message.size(), MSG_NOSIGNAL);
+                    send(*itc, join_broadcast_msg.c_str(), join_broadcast_msg.size(), MSG_NOSIGNAL);
             }
         }
     }
