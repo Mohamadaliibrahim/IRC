@@ -3,22 +3,17 @@
 #define MAX_CLIENTS 100
 extern bool g_stop;
 
-void    first_message(int new_client, t_environment *env, pollfd clients[])
+void first_message(int new_client, const struct sockaddr_in& client_addr, t_environment* env, pollfd clients[])
 {
-    struct sockaddr_in client_addr;
-            socklen_t addr_len = sizeof(client_addr);
-            if (getpeername(new_client, (struct sockaddr *)&client_addr, &addr_len) == -1)
-            {
-                std::cerr << "Error getting client address." << std::endl;
-                return;
-            } 
-            std::cout << "New client #" << new_client
-                      << " from " << inet_ntoa(client_addr.sin_addr)
-                      << ":" << ntohs(client_addr.sin_port) << std::endl;
-            clients[++env->client_count].fd = new_client;
-            clients[env->client_count].events = POLLIN;
-            env->clients[new_client] = Client();
-            env->clients[new_client].authenticated = false;
+    std::cout << "New client #" << new_client
+    << " from " << inet_ntoa(client_addr.sin_addr)
+    << ":"  << ntohs(client_addr.sin_port) << std::endl;
+
+    clients[++env->client_count].fd     = new_client;
+    clients[ env->client_count ].events = POLLIN;
+
+    env->clients[new_client]               = Client();
+    env->clients[new_client].authenticated = false;
 }
 
 void server_loop(t_environment *env)
@@ -69,14 +64,16 @@ void server_loop(t_environment *env)
         }
         if (clients[0].revents & POLLIN) //new client
         {
-            int new_client = accept(env->server_socket, NULL, NULL);
+            struct sockaddr_in client_addr;
+            socklen_t addr_len = sizeof(client_addr);
+            int new_client = accept(env->server_socket, (struct sockaddr *)&client_addr, &addr_len);
             if (new_client == -1)
             {
                 std::cerr << "Error accepting client." << std::endl;
                 continue;
             }
             set_non_blocking(new_client);
-            first_message(new_client, env, clients);
+            first_message(new_client, client_addr, env, clients);
         }
 
         // Handle existing clients
