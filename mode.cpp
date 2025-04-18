@@ -271,9 +271,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 }
                 else
                 {
-                    // Remove the password
                     env->channels[channel].IsThereAPass = -1;
-                    env->channels[channel].pass.clear();
+                    env->channels[channel].pass.clear();  // Remove the password 
                     appliedModes.push_back('-');
                     appliedModes.push_back('k');
                 }

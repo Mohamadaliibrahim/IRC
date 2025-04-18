@@ -15,7 +15,7 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 		while (isspace(cmd[i]))
 			i++;
 
-		//checking the channel name
+		//checking the channel name 
 		if (cmd[i] != '#')
 		{
 			std::ostringstream oss;

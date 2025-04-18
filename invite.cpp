@@ -100,7 +100,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         return;
     }
 
-    int t_sd = -1;// the invited user descriptor
+    int t_sd = -1;// the invited user descriptor 
 
     //getting the descriptor of the invited user with validation
     for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); it++)
@@ -183,5 +183,5 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
            << " :" << chan << "\n";
         std::string msg = sanitize_message(ss.str());
         send(t_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
-        std::cout<< msg;
+        std::cout<< msg; 
 }
