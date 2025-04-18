@@ -183,4 +183,5 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
            << " :" << chan << "\n";
         std::string msg = sanitize_message(ss.str());
         send(t_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        std::cout<< msg;
 }

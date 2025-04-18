@@ -283,6 +283,7 @@ void kick_func(int client_sd, const std::string &cmd, t_environment *env)
         std::string kickMsg = sanitize_message(ss.str());
 
         //Send to remaining users in the channel
+        std::cout<<kickMsg;
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
             send(ch.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);

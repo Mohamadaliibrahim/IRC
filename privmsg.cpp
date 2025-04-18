@@ -136,6 +136,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
 
             std::string finalMsg = sanitize_message(msg.str());
             broadcast_message(finalMsg, target, env);
+            std::cout<< finalMsg;
             atLeastOneSuccess = true;
         }
         else
@@ -152,6 +153,7 @@ void ft_private_message(int client_socket, const std::string &buffer, t_environm
                     std::string finalMsg = sanitize_message(msg.str());
 
                     send(cit->first, finalMsg.c_str(), finalMsg.size(), MSG_NOSIGNAL);
+                    std::cout<< finalMsg;
                     foundUser = true;
                     atLeastOneSuccess = true;
                     break;

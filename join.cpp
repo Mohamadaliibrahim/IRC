@@ -190,7 +190,6 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
             env->channels[channel_name].clients.push_back(client_socket);
             nf = 1;
         }
-        std::cout << (int)env->channels[channel_name].IsInviteOnly << std::endl;
         if (nf == 1)
         {
             env->channels[channel_name].superUser = client_socket;//set the channel creator as superuser
@@ -425,6 +424,7 @@ void ft_join(int client_socket, const std::string &buffer, t_environment *env)
         std::string join_msg = ":" + env->clients[client_socket].nickname + " JOIN " + channel_name + "\n";
         join_msg = sanitize_message(join_msg);
         send(client_socket, join_msg.c_str(), join_msg.size(), MSG_NOSIGNAL);
+        std::cout<< join_msg;
 
         if (!env->channels[channel_name].topic.empty())
         {

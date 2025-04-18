@@ -89,6 +89,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 				env->channels[chan].topic = top;
 				message = sanitize_message(message);
 				send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
+				std::cout<<message;
 				return ;
 			}
 			for (int i = 0; i < (int)env->channels[chan].clients.size(); i++)
@@ -109,6 +110,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 								message = oss.str();
 								message = sanitize_message(message);
 								send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
+								std::cout<<message;
 								return ;
 							}
 						}
@@ -125,6 +127,7 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 					message = oss.str();
 					message = sanitize_message(message);
 					send(client_sd, message.c_str(), message.size(), MSG_NOSIGNAL);
+					std::cout<<message;
 				}
 			}
 			if (cf == 0)
