@@ -33,38 +33,25 @@ void server_loop(t_environment *env)
     {
         if (g_stop)
         {
-            // Gracefully disconnect everyone
             for (int i = 1; i <= env->client_count; i++)
             {
                 int fd = clients[i].fd;
-                // IRC-like "ERROR" or "QUIT" message
                 std::string shutdownMsg = "ERROR :Server shutting down\r\n";
                 shutdownMsg = sanitize_message(shutdownMsg);
                 send(fd, shutdownMsg.c_str(), shutdownMsg.size(), MSG_NOSIGNAL);
-
-                // Close file descriptor
                 close(fd);
-
-                // Also remove from env->clients map
                 env->clients.erase(fd);
             }
-
-            // Finally close the server
             close(env->server_socket);
             std::cout << "Server shutting down gracefully..." << std::endl;
-            break;  // break out of the while loop
+            break;
         }
-
-        // ---------------------
-        // normal poll loop code
-        // ---------------------
 
         int poll_result = poll(clients, env->client_count + 1, -1);
         if (poll_result == -1)
         {
             if (g_stop)
             {
-                // Do the same cleanup if poll got interrupted by SIGINT
                 for (int i = 1; i <= env->client_count; i++)
                 {
                     int fd = clients[i].fd;
@@ -80,9 +67,7 @@ void server_loop(t_environment *env)
             std::cerr << "Poll error." << std::endl;
             exit(1);
         }
-
-        // Accept new connections
-        if (clients[0].revents & POLLIN)
+        if (clients[0].revents & POLLIN) //new client
         {
             int new_client = accept(env->server_socket, NULL, NULL);
             if (new_client == -1)

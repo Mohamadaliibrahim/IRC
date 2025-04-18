@@ -65,13 +65,11 @@ struct t_environment
     std::map<int, Client> clients;
     std::map<std::string, Channel> channels;
 };
-std::vector<std::string> split_on_comma(const std::string &str);
 std::string sanitize_message(const std::string &msg);
 std::string trim_that_first(const std::string& str);
 std::string trim_that_last(const std::string& str);
 std::vector<std::string> split_on_backspash_n(const std::string &str);
 std::vector<std::string> split_on_space(const std::string &str, char delimiter);
-std::string get_msg(const std::string &buffer);
 void handle_client(int client_socket, t_environment *env);
 void    lets_do_it(char **av);
 void server_loop(t_environment *env);
@@ -83,8 +81,6 @@ void    ft_join(int client_socket, const std::string &buffer, t_environment *env
 Channel create_channel(std::string channel_name,int clientsocket);
 void broadcast_message(const std::string &message, const std::string &channel_name, t_environment *env);
 void    check_av(char **av);
-std::string get_msg1(const std::string &buffer);
-// void first_message(int new_client, t_environment *env, pollfd clients[]);
 int parse_topic(std::string cmd, std::string &chan, std::string &top, int client_socket, t_environment *env);
 void    topic_func(int client_sd, std::string cmd, t_environment *env);
 int parse_invite(const std::string &cmd_line, std::string &nickname, std::string &channel, int client_socket, t_environment *env);

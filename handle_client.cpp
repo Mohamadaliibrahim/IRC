@@ -154,9 +154,8 @@ std::vector<std::string> split_on_backspash_n(const std::string &str)
     while (std::getline(stream, word))
     {
         word.erase(std::remove(word.begin(), word.end(), '\r'), word.end());
-        if (!word.empty()) {
+        if (!word.empty())
             result.push_back(word);
-        }
     }
     return result;
 }
@@ -205,10 +204,6 @@ void do_buffer(int client_socket, t_environment *env, const std::string &buffer)
     {
         *it = trim_that_first(*it);
         std::vector<std::string> a = split_on_space(*it, ' ');
-        // for (unsigned long i = 0; i < a.size(); i++)
-        // {
-        //     std::cout<< a[i] <<std::endl;
-        // }
         if (a[0] == "PASS" && !env->clients[client_socket].pass_flag)
         {
             ft_pass(*it, &env, client_socket);
@@ -306,9 +301,7 @@ void handle_client(int client_socket, t_environment *env)
                 }
             }
             if (!isInChannel)
-            {
                 continue;
-            }
             else 
             {
                 std::cout << "here\n";
@@ -326,26 +319,18 @@ void handle_client(int client_socket, t_environment *env)
                 
                 // Send to remaining users in the channel
                 for (size_t i = 0; i < chan.clients.size(); i++)
-                {
                     send(chan.clients[i], kickMsg.c_str(), kickMsg.size(), MSG_NOSIGNAL);
-                }
                 // remove from membership vectors
 
                 // if user was superUser, elect a replacement
                 if (chan.superUser == leaving_socket)
                 {
                     if (!chan.admins.empty())
-                    {
                         chan.superUser = chan.admins.front();
-                    }
                     else if (!chan.clients.empty())
-                    {
                         chan.superUser = chan.clients.front();
-                    }
                     else
-                    {
                         chan.superUser = -1;
-                    }
 
                     if (chan.superUser != -1)
                     {
@@ -366,6 +351,5 @@ void handle_client(int client_socket, t_environment *env)
         }
         close(leaving_socket);
         env->clients.erase(leaving_socket);
-        // --- end of enhanced clean‑up
     }
 }
