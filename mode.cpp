@@ -122,17 +122,12 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     std::string modes;
     std::vector<std::string> modeParams;
     int parseResult = parse_mode(cmd, channel, modes, modeParams, client_sd, env);
-    std::cout << "\n\n the modes param are" << std::endl;
-    for (int i = 0; i < (int)modeParams.size(); i++)
-        std::cout << modeParams[i]<< std::endl;
-    std::cout << "the modes param end here" << std::endl;
     if (parseResult == -1)
         return;
 
-    // 2) Check if channel exists
+    
     if (env->channels.find(channel) == env->channels.end())
     {
-        // 403 ERR_NOSUCHCHANNEL
         send_numeric_reply(client_sd,
                            env->clients[client_sd].nickname,
                            "403",
@@ -142,7 +137,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     Channel &ch = env->channels[channel];
 
-    // 3) Check if user is in channel
     bool isInChannel = false;
     for (size_t i = 0; i < env->channels[channel].clients.size(); i++)
     {
@@ -154,7 +148,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (!isInChannel)
     {
-        // 442 ERR_NOTONCHANNEL
         send_numeric_reply(client_sd,
                            env->clients[client_sd].nickname,
                            "442",
@@ -181,7 +174,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         send(client_sd, msg.c_str(), msg.size(), MSG_NOSIGNAL);
         return ;
     }
-    // 4) Check if user is superUser or admin (operator privileges)
     bool isOperator = false;
     if (env->channels[channel].superUser == client_sd)
         isOperator = true;
@@ -198,7 +190,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     }
     if (!isOperator)
     {
-        // 482 ERR_CHANOPRIVSNEEDED
         send_numeric_reply(client_sd,
                            env->clients[client_sd].nickname,
                            "482",
@@ -207,8 +198,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         return;
     }
 
-    // We'll parse each character in `modes`. sign will be '+' or '-'.
-    // We'll track which modes actually got applied in a final string for broadcast.
     std::string appliedModes;
     size_t paramIndex = 0;
     char sign = '\0';
@@ -217,17 +206,14 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
     {
         char c = modes[m];
 
-        // If we see '+' or '-', that's the new sign
         if (c == '+' || c == '-')
         {
             sign = c;
             continue;
         }
 
-        // If we have not yet encountered + or -, it's invalid usage
         if (sign != '+' && sign != '-')
         {
-            // 472 ERR_UNKNOWNMODE
             std::string unknown(1, c);
             send_numeric_reply(client_sd,
                                env->clients[client_sd].nickname,
@@ -237,11 +223,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
             continue;
         }
 
-        std::cout << sign << c << "\n";
-
         switch (c)
         {
-            // +i / -i => invite-only channel
             case 'i':
             {
                 if (sign == '+')
@@ -255,7 +238,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 break;
             }
 
-            // +t / -t => topic lock
             case 't':
             {
                 if (sign == '+')
@@ -269,7 +251,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 break;
             }
 
-            // +k / -k => channel password
             case 'k':
             {
                 if (sign == '+')
@@ -278,7 +259,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                     {
                         send_numeric_reply(client_sd,
                                            env->clients[client_sd].nickname,
-                                           "461", // ERR_NEEDMOREPARAMS
+                                           "461",
                                            "MODE",
                                            "Not enough parameters for +k");
                         break;
@@ -299,7 +280,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 break;
             }
 
-            // +l / -l => channel user limit
             case 'l':
             {
                 if (sign == '+')
@@ -322,14 +302,13 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                             "is unknown mode char");
                     else 
                     {
-                        env->channels[channel].MembersLimit = limitVal; // set the new limit
+                        env->channels[channel].MembersLimit = limitVal;
                         appliedModes.push_back('+');
                         appliedModes.push_back('l');
                     }
                 }
                 else
                 {
-                    // -l => unlimited
                     env->channels[channel].MembersLimit = -1; 
                     appliedModes.push_back('-');
                     appliedModes.push_back('l');
@@ -337,7 +316,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 break;
             }
 
-            // +o / -o => give or remove operator privileges
             case 'o':
             {
                 if (paramIndex >= modeParams.size())
@@ -351,7 +329,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 }
                 std::string targetNick = modeParams[paramIndex++];
             
-                /* 1) locate the target socket */
                 int target_sd = -1;
                 for (std::map<int, Client>::iterator it = env->clients.begin();
                      it != env->clients.end(); ++it)
@@ -372,7 +349,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                     break;
                 }
             
-                /* 2) make sure the target is on the channel */
                 bool targetOnChannel = false;
                 for (size_t i = 0; i < ch.clients.size(); ++i)
                 {
@@ -391,8 +367,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "They aren't on that channel");
                     break;
                 }
-            
-                /* 3) handle +o */
+
                 if (sign == '+')
                 {
                     bool alreadyAdmin = false;
@@ -410,10 +385,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                     appliedModes += "+o";
                     break;
                 }
-            
-                /* 4) handle -o (removal) */
-                /* --- new rules start here ----------------------------------------- */
-                /* founder can never be stripped; only founder can strip others       */
                 if (target_sd == ch.superUser)
                 {
                     send_numeric_reply(client_sd,
@@ -423,8 +394,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "Cannot remove operator status from channel founder");
                     break;
                 }
-                /* if the requester is NOT the founder and is trying to strip
-                   someone other than himself, deny it                               */
                 if (client_sd != ch.superUser && client_sd != target_sd)
                 {
                     send_numeric_reply(client_sd,
@@ -434,9 +403,8 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                                        "You can only remove your own operator status");
                     break;
                 }
-                /* --- new rules end here ------------------------------------------- */
             
-                /* actually remove */
+
                 for (std::vector<int>::iterator it = ch.admins.begin();
                      it != ch.admins.end(); ++it)
                 {
@@ -449,7 +417,6 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 appliedModes += "-o";
                 break;
             }
-
             // Anything else is unknown
             default:
             {
@@ -462,21 +429,18 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
                 break;
             }
         }
-    } // end for
-    // If nothing was applied, we can just return
+    } 
+
     if (appliedModes.empty())
         return;
 
-    // 5) Broadcast the final mode change to the channel
     {
-        // Build the mode line to broadcast
         std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
            << "@localhost MODE " << channel << " " << appliedModes << " ";
 
-        // If you want to reflect the actual parameters used for each mode:
-        // but for simplicity, let's just append all modeParams
+
         for (size_t p = 0; p < modeParams.size(); p++)
             ss << modeParams[p] << " ";
         ss << "\n";
@@ -484,6 +448,7 @@ void mode_func(int client_sd, const std::string &cmd, t_environment *env)
         std::string modeMsg = sanitize_message(ss.str());
 
         // Send to everyone in the channel
+        std::cout << modeMsg;
         for (size_t i = 0; i < ch.clients.size(); i++)
         {
             send(ch.clients[i], modeMsg.c_str(), modeMsg.size(), MSG_NOSIGNAL);

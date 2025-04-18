@@ -68,7 +68,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     if (parseResult == -1)
         return;
 
-    //making sure that the channel exist
+    //making sure that the channel exists
     if (env->channels.find(chan) == env->channels.end())
     {
         std::ostringstream oss;
@@ -81,7 +81,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
 
     int cf = 0;// client flag
 
-    //makning sure that the user inviting is a client in the channel
+    //making sure that the user inviting is a client in the channel
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
     {
         if (env->channels[chan].clients[i] == client_sd)
@@ -100,7 +100,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         return;
     }
 
-    int t_sd = -1;//fthe invited user descriptor
+    int t_sd = -1;// the invited user descriptor
 
     //getting the descriptor of the invited user with validation
     for (std::map<int, Client>::iterator it = env->clients.begin(); it != env->clients.end(); it++)
@@ -121,7 +121,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
         return;
     }
 
-    //testing if the invited user is already in teh channel invited to
+    //testing if the invited user is already in the channel invited to
     int in_chan = 0;
     for (size_t i = 0; i < env->channels[chan].clients.size(); i++)
     {
@@ -178,7 +178,7 @@ void invite_func(int client_sd, const std::string &cmd, t_environment *env)
     std::stringstream ss;
         ss << ":" << env->clients[client_sd].nickname
            << "!" << env->clients[client_sd].username
-           << "@localhost"         // <-- Always use "localhost"
+           << "@localhost"
            << " INVITE " << nick
            << " :" << chan << "\n";
         std::string msg = sanitize_message(ss.str());

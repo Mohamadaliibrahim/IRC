@@ -27,7 +27,6 @@ int	parse_topic(std::string cmd, std::string &chan, std::string &top, int client
 		}
 		else
 		{
-
 			//parsing the channel name
 			int j = 0;
 			while (!isspace(cmd[i + j]) && cmd[i + j] != '\0')
@@ -104,7 +103,6 @@ void	topic_func(int client_sd, std::string cmd, t_environment *env)
 							if (env->channels[chan].admins[i] == client_sd)
 							{
 								// af = 1;
-
 								oss << ":" << serverName << " 332 " << nick << " :Topic changed to " << top <<"\r\n";
 								env->channels[chan].topic = top;
 								message = oss.str();
